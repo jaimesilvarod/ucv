@@ -16,6 +16,7 @@ os.makedirs("evidence", exist_ok=True)
 ENDPOINTS = [
     "https://trilce.ucv.edu.pe",
     "https://campusalumno.azurewebsites.net/plan-estudio/",
+    "https://ucvapi.azure-api.net/auth-trilceprincipal/pr/api/Principal/ObtenerPersona?showSpinner=false",
     "https://ucv.blackboard.com"
 ]
 
@@ -65,7 +66,7 @@ async def check_site(url):
             result["content_hash"] = hashlib.sha256(content_bytes).hexdigest()
             html_content = resp.text
             
-            if result["http_code"] >= 400 or result["latency_ms"] > 5000:
+            if result["http_code"] >= 400 or result["latency_ms"] > 3000:
                 incident = True
                 result["error_type"] = f"HTTP {result['http_code']} o Latencia Alta"
                 
