@@ -1,0 +1,36 @@
+name: Forensics Monitor
+
+on:
+  schedule:
+    - cron: '*/5 * * * *' # Ejecuta cada 5 minutos
+  workflow_dispatch: # Permite ejecutarlo manual si lo necesitas ya
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Instalar dependencias
+        run: |
+          pip install httpx playwright supabase
+          playwright install chromium --with-deps
+
+      - name: Ejecutar Auditoría Técnica
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: python auditor.py
+
+      - name: Guardar Evidencia Gráfica
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-${{ github.run_id }}
+          path: evidence/
+          retention-days: 30
