@@ -276,18 +276,12 @@ def load_data():
 # 4. INTERFAZ PRINCIPAL
 st.markdown("""
 <div class="hero-card">
-    <div class="hero-pill">
-        MONITOREO FORENSE ACTIVO
-    </div>
-
-    <div class="hero-title">
-        Panel de Auditoría de Infraestructura Web
-    </div>
-
-    <div class="hero-subtitle">
-        Observabilidad avanzada de disponibilidad, latencia, DNS, certificados SSL,
-        integridad criptográfica y comportamiento operativo de plataformas académicas.
-    </div>
+<div class="hero-pill">MONITOREO FORENSE ACTIVO</div>
+<div class="hero-title">Panel de Auditoría de Infraestructura Web</div>
+<div class="hero-subtitle">
+Observabilidad avanzada de disponibilidad, latencia, DNS, certificados SSL,
+integridad criptográfica y comportamiento operativo de plataformas académicas.
+</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -338,37 +332,28 @@ else:
     with tab1:
         st.subheader("Evolución de Tiempos de Respuesta (ms)")
         fig_latencia = px.line(
-            df_filtrado, 
-            x="timestamp", 
-            y="latency_ms", 
+            df_filtrado,
+            x="timestamp",
+            y="latency_ms",
             color="url",
-            template="plotly_dark"
+            template="plotly_white"
         )
+        
         fig_latencia.update_layout(
-            template="plotly_dark",
             height=520,
-            plot_bgcolor="rgba(0,0,0,0)",
-            paper_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="#F8FAFC", family="Inter, sans-serif"),
-            xaxis=dict(
-                showgrid=False,
-                title="",
-                color="#CBD5E1"
-            ),
-            yaxis=dict(
-                showgrid=True,
-                gridcolor="rgba(148,163,184,0.18)",
-                title="Latencia (ms)",
-                color="#CBD5E1"
-            ),
+            plot_bgcolor="rgba(255,255,255,0)",
+            paper_bgcolor="rgba(255,255,255,0)",
+            font=dict(color="#0F172A"),
+            xaxis=dict(showgrid=False, title=""),
+            yaxis=dict(showgrid=True, gridcolor="rgba(148,163,184,0.25)", title="Latencia (ms)"),
             legend=dict(
                 orientation="h",
                 yanchor="bottom",
                 y=1.08,
                 xanchor="right",
                 x=1,
-                bgcolor="rgba(15,23,42,0.65)",
-                bordercolor="rgba(148,163,184,0.18)",
+                bgcolor="rgba(255,255,255,0.85)",
+                bordercolor="rgba(15,23,42,0.08)",
                 borderwidth=1
             ),
             margin=dict(l=10, r=10, t=45, b=10),
