@@ -172,7 +172,11 @@ footer {
 }
 
 .stApp {
-    margin-top: -4.5rem;
+    margin-top: 0rem !important;
+}
+
+.block-container {
+    padding-top: 1.2rem !important;
 }
 </style>
 """, unsafe_allow_html=True)
