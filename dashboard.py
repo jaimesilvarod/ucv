@@ -29,12 +29,14 @@ section[data-testid="stSidebar"] { display:none !important; }
     max-width: 100% !important;
     padding: 2.2rem 4rem 5rem 4rem;
 }
-.topbar {
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    margin-bottom:1.4rem;
+.topbar{
+    display:flex !important;
+    align-items:center !important;
+    justify-content:space-between !important;
+
+    margin-bottom:.4rem !important;
 }
+
 .brand-wrap {
     display:flex;
     align-items:center;
@@ -65,21 +67,36 @@ section[data-testid="stSidebar"] { display:none !important; }
     gap:14px;
     margin-bottom:18px;
 }
-.executive-grid {
-    display:grid;
-    grid-template-columns: repeat(4, minmax(190px, 1fr));
-    gap:18px;
-    margin:20px 0 26px 0;
+.executive-grid{
+    display:grid !important;
+    grid-template-columns:repeat(4,minmax(180px,1fr)) !important;
+
+    gap:16px !important;
+
+    margin-top:16px !important;
+    margin-bottom:20px !important;
 }
-.metric-card {
-    padding:20px 22px;
-    min-height:145px;
-    border-radius:24px;
-    background:rgba(255,255,255,.76);
-    border:1px solid rgba(255,255,255,.45);
-    box-shadow:0 18px 55px rgba(15,23,42,.07);
-    backdrop-filter:blur(22px);
-    transition:all .18s ease;
+.metric-card{
+    position:relative !important;
+    padding:18px 22px !important;
+    min-height:128px !important;
+
+    border-radius:22px !important;
+
+    background:rgba(255,255,255,.68) !important;
+
+    border:1px solid rgba(255,255,255,.42) !important;
+
+    box-shadow:
+        0 10px 30px rgba(15,23,42,.05),
+        inset 0 1px 0 rgba(255,255,255,.55) !important;
+
+    backdrop-filter:blur(18px) !important;
+    -webkit-backdrop-filter:blur(18px) !important;
+
+    transition:all .18s ease !important;
+
+    overflow:hidden !important;
 }
 .metric-card:hover {
     transform:translateY(-3px);
@@ -106,18 +123,24 @@ section[data-testid="stSidebar"] { display:none !important; }
     color:#64748B;
     line-height:1.4;
 }
-.section-title {
-    margin-top:22px;
-    margin-bottom:8px;
-    font-size:1.65rem;
-    font-weight:950;
-    letter-spacing:-.055em;
+.section-title{
+    margin-top:12px !important;
+    margin-bottom:4px !important;
+
+    font-size:1.55rem !important;
+    font-weight:900 !important;
+
+    letter-spacing:-.05em !important;
 }
-.section-subtitle {
-    color:#64748B;
-    font-size:.96rem;
-    margin-bottom:14px;
+
+.section-subtitle{
+    margin-bottom:10px !important;
+
+    font-size:.95rem !important;
+
+    color:#64748B !important;
 }
+
 button[kind="primary"],
 button[kind="secondary"],
 .stDownloadButton button,
