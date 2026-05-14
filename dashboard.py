@@ -33,7 +33,7 @@ section[data-testid="stSidebar"] { display:none !important; }
     display:flex;
     align-items:center;
     justify-content:space-between;
-    margin-bottom:2.2rem;
+    margin-bottom:1.4rem;
 }
 .brand-wrap {
     display:flex;
@@ -63,18 +63,18 @@ section[data-testid="stSidebar"] { display:none !important; }
     display:grid;
     grid-template-columns: 2.2fr 1fr 1fr;
     gap:14px;
-    margin-bottom:24px;
+    margin-bottom:18px;
 }
 .executive-grid {
     display:grid;
     grid-template-columns: repeat(4, minmax(190px, 1fr));
-    gap:20px;
-    margin:24px 0 34px 0;
+    gap:18px;
+    margin:20px 0 26px 0;
 }
 .metric-card {
-    padding:24px;
-    min-height:165px;
-    border-radius:26px;
+    padding:20px 22px;
+    min-height:145px;
+    border-radius:24px;
     background:rgba(255,255,255,.76);
     border:1px solid rgba(255,255,255,.45);
     box-shadow:0 18px 55px rgba(15,23,42,.07);
@@ -107,16 +107,16 @@ section[data-testid="stSidebar"] { display:none !important; }
     line-height:1.4;
 }
 .section-title {
-    margin-top:30px;
+    margin-top:22px;
     margin-bottom:8px;
-    font-size:1.75rem;
+    font-size:1.65rem;
     font-weight:950;
     letter-spacing:-.055em;
 }
 .section-subtitle {
     color:#64748B;
-    font-size:.98rem;
-    margin-bottom:18px;
+    font-size:.96rem;
+    margin-bottom:14px;
 }
 button[kind="primary"],
 button[kind="secondary"],
