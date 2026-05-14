@@ -5,6 +5,7 @@ import plotly.express as px
 from datetime import datetime, timedelta
 from fpdf import FPDF
 import base64
+import tempfile
 
 # 1. CONFIGURACIÓN DE PÁGINA (Debe ser el primer comando de Streamlit siempre)
 st.set_page_config(
@@ -53,7 +54,7 @@ def generar_pdf_bytes(df_fallos, uptime, total_incidentes):
     pdf.ln()
     
     pdf.set_font('Arial', '', 8)
-    for index, row in df_fallos.head(50).iterrows(): # Limitamos a los últimos 50 para el PDF
+    for index, row in df_fallos.head(50).iterrows():
         fecha_str = str(row['timestamp']).split('.')[0]
         url_corta = str(row['url']).replace('https://', '')[:35] + "..." if len(str(row['url'])) > 35 else str(row['url']).replace('https://', '')
         http_code = str(int(row['http_code'])) if pd.notna(row['http_code']) else "DNS/TLS"
@@ -65,7 +66,11 @@ def generar_pdf_bytes(df_fallos, uptime, total_incidentes):
         pdf.cell(50, 8, error_type, 1)
         pdf.ln()
         
-    return pdf.output(dest='S').encode('latin1')
+    # Guardado a prueba de fallos usando un archivo temporal
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+        pdf.output(tmp.name)
+        with open(tmp.name, "rb") as f:
+            return f.read()
 
 def aplicar_estilo_premium():
     st.markdown("""
