@@ -515,14 +515,6 @@ st.markdown('</div>', unsafe_allow_html=True)
 
 nav1, nav2, nav3, nav4 = st.columns([1, 1, 1, 1])
 
-section = st.segmented_control(
-    "Vista",
-    ["Resumen Ejecutivo", "Latencia", "Incidentes", "Evidencia Forense"],
-    default=st.session_state.section,
-    key="section",
-    label_visibility="collapsed",
-)
-
 servicio_mas_caido = df_servicios.sort_values("uptime").iloc[0]
 servicio_mas_lento = df_servicios.sort_values("latencia_promedio", ascending=False).iloc[0]
 servicio_mas_saludable = df_servicios.sort_values("health_score", ascending=False).iloc[0]
