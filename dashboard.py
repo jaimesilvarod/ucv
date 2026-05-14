@@ -2,7 +2,7 @@ import streamlit as st
 from supabase import create_client
 import pandas as pd
 import plotly.express as px
-from datetime import datetime
+from datetime import datetime, timezone
 from fpdf import FPDF
 import tempfile
 
@@ -264,7 +264,7 @@ class ReporteForensePDF(FPDF):
         self.set_font("Arial", "B", 14)
         self.cell(0, 9, "INFORME TECNICO DE OBSERVABILIDAD Y DISPONIBILIDAD OPERACIONAL", 0, 1, "C")
         self.set_font("Arial", "", 9)
-        self.cell(0, 7, f"Generado: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC", 0, 1, "C")
+        self.cell(0, 7, f"Generado: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')} UTC", 0, 1, "C")
         self.line(10, 28, 200, 28)
         self.ln(8)
 
@@ -442,7 +442,7 @@ section = st.segmented_control(
     label_visibility="collapsed",
 )
 
-control1, control2 = st.columns([5, 1])
+control1, control2, control3 = st.columns([4, 1.4, 1])
 
 with control1:
     endpoint_seleccionado = st.selectbox(
@@ -453,14 +453,36 @@ with control1:
     )
 
 with control2:
+    ventana = st.selectbox(
+        "Ventana",
+        ["Últimas 24 horas", "Últimos 7 días", "Últimos 30 días", "Todo"],
+        label_visibility="collapsed",
+    )
+
+with control3:
     if st.button("Actualizar"):
         load_data.clear()
         st.rerun()
 
+df_base = df.copy()
+
+now_utc = pd.Timestamp.now(tz="UTC")
+
+if ventana == "Últimas 24 horas":
+    df_base = df_base[df_base["timestamp"] >= now_utc - pd.Timedelta(hours=24)]
+elif ventana == "Últimos 7 días":
+    df_base = df_base[df_base["timestamp"] >= now_utc - pd.Timedelta(days=7)]
+elif ventana == "Últimos 30 días":
+    df_base = df_base[df_base["timestamp"] >= now_utc - pd.Timedelta(days=30)]
+
 if endpoint_seleccionado != "Todas":
-    df_filtrado = df[df["url"] == endpoint_seleccionado].copy()
+    df_filtrado = df_base[df_base["url"] == endpoint_seleccionado].copy()
 else:
-    df_filtrado = df.copy()
+    df_filtrado = df_base.copy()
+
+if df_filtrado.empty:
+    st.warning("No hay datos para el endpoint o ventana seleccionada.")
+    st.stop()
 
 df_filtrado["is_fail"] = (
     (df_filtrado["http_code"] >= 400)
@@ -512,8 +534,6 @@ st.download_button(
     key="floating_pdf",
 )
 st.markdown('</div>', unsafe_allow_html=True)
-
-nav1, nav2, nav3, nav4 = st.columns([1, 1, 1, 1])
 
 servicio_mas_caido = df_servicios.sort_values("uptime").iloc[0]
 servicio_mas_lento = df_servicios.sort_values("latencia_promedio", ascending=False).iloc[0]
@@ -583,6 +603,10 @@ if section == "Resumen Ejecutivo":
     df_health["health_score"] = df_health["health_score"].round(1)
     df_health["latencia_promedio"] = df_health["latencia_promedio"].round(0)
     df_health["latencia_maxima"] = df_health["latencia_maxima"].round(0)
+    df_health = df_health.sort_values(
+        by=["uptime", "fallos", "latencia_promedio"],
+        ascending=[True, False, False],
+    )
 
     st.dataframe(
         df_health[["url", "uptime", "health_score", "muestras", "fallos", "latencia_promedio", "latencia_maxima", "evidencia"]],
