@@ -281,31 +281,52 @@ svg.main-svg {
 /* ===== FLOATING PDF ===== */
 
 .floating-pdf {
-    position: fixed;
-    right: 30px;
-    top: 110px;
-    z-index: 9999;
+    position: fixed !important;
+    top: 110px !important;
+    right: 28px !important;
+    z-index: 999999 !important;
+}
+
+.floating-pdf .stDownloadButton {
+    width: auto !important;
 }
 
 .floating-pdf .stDownloadButton button {
-    width: 74px !important;
+    width: 82px !important;
     height: 52px !important;
     min-height: 52px !important;
     padding: 0 !important;
+
     border-radius: 18px !important;
-    background: linear-gradient(135deg,#4F46E5,#06B6D4,#10B981) !important;
-    color: white !important;
-    font-size: 0 !important;
+
+    background:
+        linear-gradient(135deg,#4F46E5,#06B6D4,#10B981) !important;
+
+    color: transparent !important;
+
+    border: 1px solid rgba(255,255,255,.28) !important;
+
     box-shadow:
         0 18px 46px rgba(79,70,229,.30),
-        inset 0 1px 0 rgba(255,255,255,.28) !important;
+        inset 0 1px 0 rgba(255,255,255,.22) !important;
+
+    position: relative !important;
 }
 
 .floating-pdf .stDownloadButton button::before {
     content: "📄 PDF";
+    position: absolute;
+    inset: 0;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
     font-size: 13px;
     font-weight: 950;
-    letter-spacing: .02em;
+    letter-spacing: .04em;
+
+    color: white;
 }
 
 /* ===== RESPONSIVE ===== */
@@ -330,6 +351,33 @@ svg.main-svg {
         flex-wrap: wrap !important;
     }
 }
+
+
+.standards-badge {
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+
+    margin-top:4px;
+    margin-bottom:20px;
+
+    padding:8px 14px;
+
+    border-radius:999px;
+
+    background:rgba(255,255,255,.56);
+
+    border:1px solid rgba(255,255,255,.65);
+
+    box-shadow:0 10px 30px rgba(15,23,42,.05);
+
+    font-size:.76rem;
+    font-weight:800;
+    color:#64748B;
+
+    backdrop-filter:blur(18px);
+}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -561,6 +609,7 @@ def generar_pdf_bytes(df_operacion):
         0,
         5,
         "Documento generado por Aurora Monitoring. "
+        "Alineado tecnicamente con ISO/IEC 27037 y NIST SP 800-92. "
         "Desarrollado por jaimesilva.co. "
         "Este reporte no sustituye peritaje judicial, pero preserva una relacion tecnica ordenada, "
         "cronologica y verificable de los eventos registrados por la herramienta."
@@ -664,6 +713,12 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+st.markdown("""
+<div class="standards-badge">
+ISO/IEC 27037 · NIST SP 800-92 aligned
+</div>
+""", unsafe_allow_html=True)
+
 df = load_data()
 
 if df.empty:
@@ -758,6 +813,13 @@ df_servicios["health_score"] = (
 
 pdf_bytes = generar_pdf_bytes(df)
 
+st.markdown('</div>', unsafe_allow_html=True)
+
+servicio_mas_caido = df_servicios.sort_values("uptime").iloc[0]
+servicio_mas_lento = df_servicios.sort_values("latencia_promedio", ascending=False).iloc[0]
+servicio_mas_saludable = df_servicios.sort_values("health_score", ascending=False).iloc[0]
+servicio_mas_evidencia = df_servicios.sort_values("evidencia", ascending=False).iloc[0]
+
 st.markdown('<div class="floating-pdf">', unsafe_allow_html=True)
 st.download_button(
     label="PDF",
@@ -767,12 +829,6 @@ st.download_button(
     key="floating_pdf",
     help="Exportar informe a PDF"
 )
-st.markdown('</div>', unsafe_allow_html=True)
-
-servicio_mas_caido = df_servicios.sort_values("uptime").iloc[0]
-servicio_mas_lento = df_servicios.sort_values("latencia_promedio", ascending=False).iloc[0]
-servicio_mas_saludable = df_servicios.sort_values("health_score", ascending=False).iloc[0]
-servicio_mas_evidencia = df_servicios.sort_values("evidencia", ascending=False).iloc[0]
 
 if section == "Resumen Ejecutivo":
     st.markdown('<div class="section-title">Gobierno Ejecutivo de Disponibilidad</div>', unsafe_allow_html=True)
