@@ -202,22 +202,57 @@ footer {
     padding-top: 1.2rem !important;
 }
 
-div[data-testid="column"] .stButton button {
-    min-height: 42px !important;
+/* ===== GLOBAL NAVIGATION ===== */
+
+div[data-testid="stSegmentedControl"] {
+    width: 100% !important;
+    margin: 18px 0 28px 0 !important;
 }
 
-/* Navegación superior */
-div[data-testid="column"] .stButton button:has(p) {
-    background: rgba(255,255,255,.58) !important;
-    color: #334155 !important;
-    border: 1px solid rgba(15,23,42,.08) !important;
-    box-shadow: 0 8px 22px rgba(15,23,42,.04) !important;
+div[data-testid="stSegmentedControl"] > div {
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 10px !important;
+    padding: 8px !important;
+    border-radius: 22px !important;
+    background: rgba(255,255,255,.56) !important;
+    border: 1px solid rgba(255,255,255,.55) !important;
+    box-shadow:
+        0 18px 50px rgba(15,23,42,.06),
+        inset 0 1px 0 rgba(255,255,255,.55) !important;
+    backdrop-filter: blur(22px) !important;
+    -webkit-backdrop-filter: blur(22px) !important;
 }
 
-/* Hover navegación */
-div[data-testid="column"] .stButton button:has(p):hover {
-    transform: translateY(-1px);
-    background: rgba(255,255,255,.82) !important;
+div[data-testid="stSegmentedControl"] label {
+    width: 100% !important;
+}
+
+div[data-testid="stSegmentedControl"] label > div {
+    width: 100% !important;
+    justify-content: center !important;
+    border-radius: 16px !important;
+    min-height: 46px !important;
+    font-weight: 850 !important;
+    color: #475569 !important;
+    border: 1px solid transparent !important;
+    transition: all .18s ease !important;
+}
+
+div[data-testid="stSegmentedControl"] label:hover > div {
+    background: rgba(255,255,255,.65) !important;
+    color: #0F172A !important;
+}
+
+div[data-testid="stSegmentedControl"] label[aria-checked="true"] > div,
+div[data-testid="stSegmentedControl"] label[data-baseweb="radio"]:has(input:checked) > div {
+    background:
+        linear-gradient(135deg, rgba(79,70,229,.95), rgba(6,182,212,.95)) !important;
+    color: #FFFFFF !important;
+    box-shadow:
+        0 12px 28px rgba(79,70,229,.24),
+        inset 0 1px 0 rgba(255,255,255,.25) !important;
 }
 
 </style>
@@ -469,23 +504,13 @@ with top3:
 
 nav1, nav2, nav3, nav4 = st.columns([1, 1, 1, 1])
 
-with nav1:
-    if st.button("Resumen Ejecutivo", key="nav_resumen"):
-        st.session_state.section = "Resumen Ejecutivo"
-
-with nav2:
-    if st.button("Latencia", key="nav_latencia"):
-        st.session_state.section = "Latencia"
-
-with nav3:
-    if st.button("Incidentes", key="nav_incidentes"):
-        st.session_state.section = "Incidentes"
-
-with nav4:
-    if st.button("Evidencia Forense", key="nav_evidencia"):
-        st.session_state.section = "Evidencia Forense"
-
-section = st.session_state.section
+section = st.segmented_control(
+    "Vista",
+    ["Resumen Ejecutivo", "Latencia", "Incidentes", "Evidencia Forense"],
+    default=st.session_state.section,
+    key="section",
+    label_visibility="collapsed",
+)
 
 servicio_mas_caido = df_servicios.sort_values("uptime").iloc[0]
 servicio_mas_lento = df_servicios.sort_values("latencia_promedio", ascending=False).iloc[0]
