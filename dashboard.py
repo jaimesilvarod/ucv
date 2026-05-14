@@ -4,6 +4,8 @@ import pandas as pd
 import plotly.express as px
 from datetime import datetime, timezone
 from fpdf import FPDF
+import hashlib
+import uuid
 import tempfile
 
 st.set_page_config(
@@ -194,26 +196,19 @@ button[kind="secondary"],
     padding:20px 24px !important;
     min-height:138px !important;
     border-radius:24px !important;
-    background:
-        linear-gradient(145deg, rgba(255,255,255,.80), rgba(255,255,255,.50)) !important;
-    border:1px solid rgba(255,255,255,.70) !important;
+    background:rgba(255,255,255,.46) !important;
+    border:1px solid rgba(255,255,255,.62) !important;
     box-shadow:
-        0 18px 48px rgba(15,23,42,.07),
-        inset 0 1px 0 rgba(255,255,255,.82) !important;
-    backdrop-filter:blur(22px) !important;
-    -webkit-backdrop-filter:blur(22px) !important;
+        0 18px 46px rgba(15,23,42,.045),
+        inset 0 1px 0 rgba(255,255,255,.70) !important;
+    backdrop-filter:blur(24px) saturate(115%) !important;
+    -webkit-backdrop-filter:blur(24px) saturate(115%) !important;
     transition:all .18s ease !important;
     overflow:hidden !important;
 }
 
 .metric-card::before {
-    content:"";
-    position:absolute;
-    inset:0;
-    background:
-        radial-gradient(circle at 16% 18%, rgba(79,70,229,.12), transparent 28%),
-        radial-gradient(circle at 90% 12%, rgba(6,182,212,.12), transparent 32%);
-    pointer-events:none;
+    display:none !important;
 }
 
 .metric-card:hover {
@@ -229,8 +224,9 @@ button[kind="secondary"],
     align-items:center;
     justify-content:center;
     border-radius:999px;
-    background:linear-gradient(135deg, rgba(79,70,229,.18), rgba(6,182,212,.18), rgba(16,185,129,.16));
-    font-size:1.2rem;
+    background:rgba(255,255,255,.55);
+    border:1px solid rgba(255,255,255,.65);
+    font-size:1.15rem;
     margin-bottom:18px;
 }
 
@@ -419,9 +415,27 @@ class ReporteForensePDF(FPDF):
         self.set_text_color(100, 116, 139)
         self.cell(0, 8, f"Aurora desarrollado por jaimesilva.co | Pagina {self.page_no()}", 0, 0, "C")
 
+AURORA_VERSION = "1.0.0"
 
+
+def dataframe_sha256(df_in: pd.DataFrame) -> str:
+    payload = (
+        df_in.sort_values(by=["timestamp", "url"], ascending=[True, True])
+        .astype(str)
+        .to_csv(index=False)
+        .encode("utf-8")
+    )
+    return hashlib.sha256(payload).hexdigest()
+
+
+def bytes_sha256(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+    
 def generar_pdf_bytes(df_operacion):
     df_pdf = df_operacion.copy()
+    
+    report_id = f"AUR-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:8].upper()}"
+    source_hash = dataframe_sha256(df_pdf)
 
     df_pdf["is_fail"] = (
         (df_pdf["http_code"] >= 400)
@@ -481,7 +495,10 @@ def generar_pdf_bytes(df_operacion):
         5,
         f"Generado: {generado}\n"
         f"Herramienta: Aurora\n"
+        f"Version Aurora: {AURORA_VERSION}\n"
+        f"ID informe: {report_id}\n"
         f"Autor / desarrollador: jaimesilva.co\n"
+        f"Hash SHA-256 datos fuente: {source_hash}\n"
         f"Alcance: operacion monitoreada completa disponible en la boveda tecnica al momento de generacion."
     )
     pdf.ln(3)
@@ -690,28 +707,44 @@ def classify_latency(ms: float) -> str:
     return "Crítica"
 
 
-st.markdown("""
-<div class="topbar">
-  <div class="brand-wrap">
-    <div class="brand-logo">
-      <svg width="42" height="42" viewBox="0 0 64 64" fill="none">
-        <defs>
-          <linearGradient id="g" x1="8" y1="8" x2="56" y2="56">
-            <stop offset="0%" stop-color="#4F46E5"/>
-            <stop offset="55%" stop-color="#06B6D4"/>
-            <stop offset="100%" stop-color="#10B981"/>
-          </linearGradient>
-        </defs>
-        <rect x="6" y="6" width="52" height="52" rx="16" fill="url(#g)"/>
-        <path d="M18 39C23 22 41 22 46 39" stroke="white" stroke-width="5" stroke-linecap="round"/>
-        <circle cx="32" cy="32" r="5" fill="white"/>
-      </svg>
+top_left, top_right = st.columns([6, 1])
+
+with top_left:
+    st.markdown("""
+    <div class="topbar">
+      <div class="brand-wrap">
+        <div class="brand-logo">
+          <svg width="42" height="42" viewBox="0 0 64 64" fill="none">
+            <defs>
+              <linearGradient id="g" x1="8" y1="8" x2="56" y2="56">
+                <stop offset="0%" stop-color="#4F46E5"/>
+                <stop offset="55%" stop-color="#06B6D4"/>
+                <stop offset="100%" stop-color="#10B981"/>
+              </linearGradient>
+            </defs>
+            <rect x="6" y="6" width="52" height="52" rx="16" fill="url(#g)"/>
+            <path d="M18 39C23 22 41 22 46 39" stroke="white" stroke-width="5" stroke-linecap="round"/>
+            <circle cx="32" cy="32" r="5" fill="white"/>
+          </svg>
+        </div>
+        <div class="brand-text">Aurora</div>
+        <div class="brand-badge">LIVE MONITORING</div>
+      </div>
     </div>
-    <div class="brand-text">Aurora</div>
-    <div class="brand-badge">LIVE MONITORING</div>
-  </div>
-</div>
-""", unsafe_allow_html=True)
+    <div class="standards-badge">ISO/IEC 27037 · NIST SP 800-92 aligned</div>
+    """, unsafe_allow_html=True)
+
+with top_right:
+    st.download_button(
+        label="📄 PDF",
+        data=pdf_bytes,
+        file_name=f"Aurora_Informe_Forense_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
+        mime="application/pdf",
+        key="top_pdf",
+        help="Exportar informe a PDF",
+        use_container_width=True,
+    )
+    st.caption(f"SHA-256: `{pdf_hash[:12]}...`")
 
 st.markdown("""
 <div class="standards-badge">
@@ -812,23 +845,15 @@ df_servicios["health_score"] = (
 ).clip(0, 100)
 
 pdf_bytes = generar_pdf_bytes(df)
+pdf_hash = bytes_sha256(pdf_bytes)
 
-st.markdown('</div>', unsafe_allow_html=True)
 
 servicio_mas_caido = df_servicios.sort_values("uptime").iloc[0]
 servicio_mas_lento = df_servicios.sort_values("latencia_promedio", ascending=False).iloc[0]
 servicio_mas_saludable = df_servicios.sort_values("health_score", ascending=False).iloc[0]
 servicio_mas_evidencia = df_servicios.sort_values("evidencia", ascending=False).iloc[0]
 
-st.markdown('<div class="floating-pdf">', unsafe_allow_html=True)
-st.download_button(
-    label="PDF",
-    data=pdf_bytes,
-    file_name=f"Aurora_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
-    mime="application/pdf",
-    key="floating_pdf",
-    help="Exportar informe a PDF"
-)
+
 
 if section == "Resumen Ejecutivo":
     st.markdown('<div class="section-title">Gobierno Ejecutivo de Disponibilidad</div>', unsafe_allow_html=True)
