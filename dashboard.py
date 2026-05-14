@@ -7,10 +7,11 @@ from fpdf import FPDF
 import tempfile
 
 st.set_page_config(
-    page_title="Aurora | Web Monitor",
+    page_title="Aurora",
     page_icon="🌌",
     layout="wide",
     initial_sidebar_state="collapsed",
+    menu_items={}
 )
 
 st.markdown("""
@@ -146,6 +147,33 @@ html, body, [class*="css"] {
     font-family: Inter, ui-sans-serif, system-ui, sans-serif;
 }
 h1,h2,h3 { letter-spacing:-.05em; }
+header[data-testid="stHeader"] {
+    display: none !important;
+}
+
+[data-testid="stToolbar"] {
+    display: none !important;
+}
+
+[data-testid="stDecoration"] {
+    display: none !important;
+}
+
+[data-testid="stStatusWidget"] {
+    display: none !important;
+}
+
+#MainMenu {
+    visibility: hidden !important;
+}
+
+footer {
+    visibility: hidden !important;
+}
+
+.stApp {
+    margin-top: -4.5rem;
+}
 </style>
 """, unsafe_allow_html=True)
 
