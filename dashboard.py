@@ -285,22 +285,22 @@ else:
     
     <div class="kpi-item">
     <div class="kpi-label">UPTIME GENERAL</div>
-    <div class="kpi-value">{uptime:.2f}%</div>
+    <div class="kpi-value">{uptime_porcentaje:.2f}%</div>
     </div>
     
     <div class="kpi-item">
     <div class="kpi-label">INCIDENTES</div>
-    <div class="kpi-value">{incidentes}</div>
+    <div class="kpi-value">{total_fallos}</div>
     </div>
     
     <div class="kpi-item">
     <div class="kpi-label">LATENCIA PROMEDIO</div>
-    <div class="kpi-value">{latencia} ms</div>
+    <div class="kpi-value">{latencia_promedio:.0f} ms</div>
     </div>
     
     <div class="kpi-item">
     <div class="kpi-label">MUESTRAS</div>
-    <div class="kpi-value">{muestras}</div>
+    <div class="kpi-value">{total_checks}</div>
     </div>
     
     </div>
