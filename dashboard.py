@@ -111,10 +111,16 @@ else:
             x="timestamp", 
             y="latency_ms", 
             color="url",
-            markers=True,
-            title="Latencia Histórica por Endpoint",
-            template="plotly_dark",
-            labels={"timestamp": "Fecha/Hora UTC", "latency_ms": "Latencia (ms)", "url": "Plataforma"}
+            template="plotly_dark"
+        )
+        # Rediseño premium de la gráfica
+        fig_latencia.update_layout(
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)",
+            xaxis=dict(showgrid=False, title=""),
+            yaxis=dict(showgrid=True, gridcolor="#333333", title="Latencia (ms)"),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            margin=dict(l=0, r=0, t=30, b=0)
         )
         st.plotly_chart(fig_latencia, use_container_width=True)
 
