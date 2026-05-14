@@ -18,22 +18,43 @@ st.markdown("""
 <style>
 .stApp {
     background:
-        radial-gradient(circle at 15% 18%, rgba(59,130,246,.18), transparent 24%),
-        radial-gradient(circle at 82% 10%, rgba(16,185,129,.16), transparent 28%),
-        radial-gradient(circle at 55% 82%, rgba(139,92,246,.16), transparent 32%),
-        linear-gradient(180deg, #F8FAFC 0%, #EEF4FF 100%);
+        radial-gradient(circle at 8% 14%, rgba(79,70,229,.24), transparent 24%),
+        radial-gradient(circle at 28% 8%, rgba(6,182,212,.18), transparent 28%),
+        radial-gradient(circle at 74% 6%, rgba(16,185,129,.22), transparent 30%),
+        radial-gradient(circle at 88% 36%, rgba(34,211,238,.14), transparent 28%),
+        radial-gradient(circle at 52% 88%, rgba(139,92,246,.15), transparent 32%),
+        linear-gradient(180deg, #F8FBFF 0%, #EEF4FF 48%, #F7F9FF 100%);
     color: #0F172A;
+    margin-top: 0rem !important;
 }
+
 section[data-testid="stSidebar"] { display:none !important; }
+
 .block-container {
     max-width: 100% !important;
-    padding: 2.2rem 4rem 5rem 4rem;
+    padding: 1.2rem 4rem 5rem 4rem !important;
 }
+
+html, body, [class*="css"] {
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+h1,h2,h3 { letter-spacing:-.05em; }
+
+header[data-testid="stHeader"],
+[data-testid="stToolbar"],
+[data-testid="stDecoration"],
+[data-testid="stStatusWidget"] {
+    display: none !important;
+}
+
+#MainMenu { visibility: hidden !important; }
+footer { visibility: hidden !important; }
+
 .topbar{
     display:flex !important;
     align-items:center !important;
     justify-content:space-between !important;
-
     margin-bottom:.4rem !important;
 }
 
@@ -42,16 +63,19 @@ section[data-testid="stSidebar"] { display:none !important; }
     align-items:center;
     gap:14px;
 }
+
 .brand-logo svg {
     filter: drop-shadow(0 0 18px rgba(79,70,229,.28))
             drop-shadow(0 0 32px rgba(6,182,212,.16));
 }
+
 .brand-text {
     font-size:2rem;
     font-weight:950;
     letter-spacing:-.07em;
     color:#0F172A;
 }
+
 .brand-badge {
     padding:7px 13px;
     border-radius:999px;
@@ -61,179 +85,40 @@ section[data-testid="stSidebar"] { display:none !important; }
     font-weight:850;
     letter-spacing:.08em;
 }
-.control-bar {
-    display:grid;
-    grid-template-columns: 2.2fr 1fr 1fr;
-    gap:14px;
-    margin-bottom:18px;
-}
-.executive-grid{
-    display:grid !important;
-    grid-template-columns:repeat(4,minmax(180px,1fr)) !important;
 
-    gap:16px !important;
-
-    margin-top:16px !important;
-    margin-bottom:20px !important;
-}
-.metric-card{
-    position:relative !important;
-    padding:18px 22px !important;
-    min-height:128px !important;
-
-    border-radius:22px !important;
-
-    background:rgba(255,255,255,.68) !important;
-
-    border:1px solid rgba(255,255,255,.42) !important;
-
-    box-shadow:
-        0 10px 30px rgba(15,23,42,.05),
-        inset 0 1px 0 rgba(255,255,255,.55) !important;
-
-    backdrop-filter:blur(18px) !important;
-    -webkit-backdrop-filter:blur(18px) !important;
-
-    transition:all .18s ease !important;
-
-    overflow:hidden !important;
-}
-.metric-card:hover {
-    transform:translateY(-3px);
-    box-shadow:0 24px 70px rgba(15,23,42,.10);
-}
-.metric-icon { font-size:1.6rem; margin-bottom:14px; }
-.metric-label {
-    font-size:.75rem;
-    font-weight:900;
-    letter-spacing:.06em;
-    color:#64748B;
-    text-transform:uppercase;
-}
-.metric-value {
-    margin-top:10px;
-    font-size:2.25rem;
-    font-weight:950;
-    letter-spacing:-.06em;
-    color:#0F172A;
-}
-.metric-note {
-    margin-top:12px;
-    font-size:.82rem;
-    color:#64748B;
-    line-height:1.4;
-}
-.section-title{
-    margin-top:12px !important;
-    margin-bottom:4px !important;
-
-    font-size:1.55rem !important;
-    font-weight:900 !important;
-
-    letter-spacing:-.05em !important;
-}
-
-.section-subtitle{
-    margin-bottom:10px !important;
-
-    font-size:.95rem !important;
-
-    color:#64748B !important;
-}
-
-button[kind="primary"],
-button[kind="secondary"],
-.stDownloadButton button,
-.stButton button {
-    border-radius:999px !important;
-    background:linear-gradient(135deg,#4F46E5,#06B6D4) !important;
-    color:white !important;
-    border:0 !important;
-    box-shadow:0 12px 30px rgba(79,70,229,.22) !important;
-    font-weight:850 !important;
-}
-[data-testid="stDataFrame"] {
-    border-radius:24px;
-    overflow:hidden;
-    border:1px solid rgba(15,23,42,.07);
-    box-shadow:0 18px 55px rgba(15,23,42,.06);
-    background:rgba(255,255,255,.80);
-}
-.js-plotly-plot,
-.plot-container,
-svg.main-svg {
-    background:transparent !important;
-    border:none !important;
-    box-shadow:none !important;
-}
-html, body, [class*="css"] {
-    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
-}
-h1,h2,h3 { letter-spacing:-.05em; }
-header[data-testid="stHeader"] {
-    display: none !important;
-}
-
-[data-testid="stToolbar"] {
-    display: none !important;
-}
-
-[data-testid="stDecoration"] {
-    display: none !important;
-}
-
-[data-testid="stStatusWidget"] {
-    display: none !important;
-}
-
-#MainMenu {
-    visibility: hidden !important;
-}
-
-footer {
-    visibility: hidden !important;
-}
-
-.stApp {
-    margin-top: 0rem !important;
-}
-
-.block-container {
-    padding-top: 1.2rem !important;
-}
-
-/* ===== GLOBAL NAVIGATION ===== */
+/* ===== COMPACT NAVIGATION ===== */
 
 div[data-testid="stSegmentedControl"] {
-    width: 100% !important;
-    margin: 18px 0 28px 0 !important;
+    max-width: 620px !important;
+    margin: 14px 0 18px 0 !important;
 }
 
 div[data-testid="stSegmentedControl"] > div {
-    width: 100% !important;
-    display: grid !important;
-    grid-template-columns: repeat(4, 1fr) !important;
-    gap: 10px !important;
-    padding: 8px !important;
-    border-radius: 22px !important;
-    background: rgba(255,255,255,.56) !important;
-    border: 1px solid rgba(255,255,255,.55) !important;
+    display: flex !important;
+    width: fit-content !important;
+    gap: 6px !important;
+    padding: 6px !important;
+    border-radius: 18px !important;
+    background: rgba(255,255,255,.62) !important;
+    border: 1px solid rgba(255,255,255,.70) !important;
     box-shadow:
-        0 18px 50px rgba(15,23,42,.06),
-        inset 0 1px 0 rgba(255,255,255,.55) !important;
+        0 12px 36px rgba(15,23,42,.06),
+        inset 0 1px 0 rgba(255,255,255,.58) !important;
     backdrop-filter: blur(22px) !important;
     -webkit-backdrop-filter: blur(22px) !important;
 }
 
 div[data-testid="stSegmentedControl"] label {
-    width: 100% !important;
+    width: auto !important;
 }
 
 div[data-testid="stSegmentedControl"] label > div {
-    width: 100% !important;
+    width: auto !important;
     justify-content: center !important;
-    border-radius: 16px !important;
-    min-height: 46px !important;
+    border-radius: 13px !important;
+    min-height: 38px !important;
+    padding: 0 16px !important;
+    font-size: .82rem !important;
     font-weight: 850 !important;
     color: #475569 !important;
     border: 1px solid transparent !important;
@@ -241,93 +126,195 @@ div[data-testid="stSegmentedControl"] label > div {
 }
 
 div[data-testid="stSegmentedControl"] label:hover > div {
-    background: rgba(255,255,255,.65) !important;
+    background: rgba(255,255,255,.68) !important;
     color: #0F172A !important;
 }
 
 div[data-testid="stSegmentedControl"] label[aria-checked="true"] > div,
 div[data-testid="stSegmentedControl"] label[data-baseweb="radio"]:has(input:checked) > div {
-    background:
-        linear-gradient(135deg, rgba(79,70,229,.95), rgba(6,182,212,.95)) !important;
-    color: #FFFFFF !important;
+    background: linear-gradient(135deg,#4F46E5,#06B6D4,#10B981) !important;
+    color: white !important;
     box-shadow:
         0 12px 28px rgba(79,70,229,.24),
         inset 0 1px 0 rgba(255,255,255,.25) !important;
 }
 
-.hero-panel {
-    position: relative;
-    padding: 28px 32px;
-    margin: 10px 0 22px 0;
-    border-radius: 30px;
+/* ===== FILTER BAR ===== */
+
+div[data-baseweb="select"] > div {
+    min-height: 44px !important;
+    border-radius: 16px !important;
+    background: rgba(255,255,255,.78) !important;
+    border: 1px solid rgba(255,255,255,.70) !important;
+    box-shadow: 0 10px 28px rgba(15,23,42,.05) !important;
+}
+
+button[kind="primary"],
+button[kind="secondary"],
+.stDownloadButton button,
+.stButton button {
+    min-height: 44px !important;
+    border-radius:999px !important;
+    background:linear-gradient(135deg,#4F46E5,#06B6D4) !important;
+    color:white !important;
+    border:0 !important;
+    box-shadow:0 12px 30px rgba(79,70,229,.22) !important;
+    font-weight:850 !important;
+    padding: 0 22px !important;
+}
+
+/* ===== SECTIONS ===== */
+
+.section-title{
+    margin-top:12px !important;
+    margin-bottom:4px !important;
+    font-size:1.55rem !important;
+    font-weight:900 !important;
+    letter-spacing:-.05em !important;
+}
+
+.section-subtitle{
+    margin-bottom:10px !important;
+    font-size:.95rem !important;
+    color:#64748B !important;
+}
+
+/* ===== CARDS ===== */
+
+.executive-grid{
+    display:grid !important;
+    grid-template-columns:repeat(4,minmax(180px,1fr)) !important;
+    gap:16px !important;
+    margin-top:16px !important;
+    margin-bottom:20px !important;
+}
+
+.metric-card{
+    position:relative !important;
+    padding:20px 24px !important;
+    min-height:138px !important;
+    border-radius:24px !important;
     background:
-        linear-gradient(135deg, rgba(255,255,255,.82), rgba(255,255,255,.52)),
-        radial-gradient(circle at 12% 18%, rgba(79,70,229,.18), transparent 30%),
-        radial-gradient(circle at 88% 20%, rgba(6,182,212,.18), transparent 32%);
-    border: 1px solid rgba(255,255,255,.62);
+        linear-gradient(145deg, rgba(255,255,255,.80), rgba(255,255,255,.50)) !important;
+    border:1px solid rgba(255,255,255,.70) !important;
     box-shadow:
-        0 24px 80px rgba(15,23,42,.08),
-        inset 0 1px 0 rgba(255,255,255,.75);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    overflow: hidden;
+        0 18px 48px rgba(15,23,42,.07),
+        inset 0 1px 0 rgba(255,255,255,.82) !important;
+    backdrop-filter:blur(22px) !important;
+    -webkit-backdrop-filter:blur(22px) !important;
+    transition:all .18s ease !important;
+    overflow:hidden !important;
 }
 
-.hero-title {
-    font-size: 2.2rem;
-    font-weight: 950;
-    letter-spacing: -.07em;
-    color: #0F172A;
-    margin-bottom: 8px;
+.metric-card::before {
+    content:"";
+    position:absolute;
+    inset:0;
+    background:
+        radial-gradient(circle at 16% 18%, rgba(79,70,229,.12), transparent 28%),
+        radial-gradient(circle at 90% 12%, rgba(6,182,212,.12), transparent 32%);
+    pointer-events:none;
 }
 
-.hero-subtitle {
-    font-size: 1rem;
-    color: #64748B;
-    max-width: 860px;
-    line-height: 1.55;
+.metric-card:hover {
+    transform:translateY(-4px);
+    box-shadow:0 26px 80px rgba(15,23,42,.12);
 }
 
-.hero-status-row {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    margin-top: 18px;
-    flex-wrap: wrap;
+.metric-icon {
+    position:relative;
+    width:34px;
+    height:34px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:999px;
+    background:linear-gradient(135deg, rgba(79,70,229,.18), rgba(6,182,212,.18), rgba(16,185,129,.16));
+    font-size:1.2rem;
+    margin-bottom:18px;
 }
 
-.status-pill {
-    padding: 9px 15px;
-    border-radius: 999px;
-    font-size: .78rem;
-    font-weight: 900;
-    letter-spacing: .06em;
+.metric-label {
+    position:relative;
+    font-size:.75rem;
+    font-weight:900;
+    letter-spacing:.06em;
+    color:#64748B;
+    text-transform:uppercase;
 }
 
-.status-ok {
-    color: #047857;
-    background: rgba(16,185,129,.13);
+.metric-value {
+    position:relative;
+    margin-top:12px;
+    font-size:2.15rem;
+    font-weight:950;
+    letter-spacing:-.06em;
+    color:#0F172A;
 }
 
-.status-warn {
-    color: #B45309;
-    background: rgba(245,158,11,.16);
+.metric-note {
+    position:relative;
+    margin-top:12px;
+    font-size:.82rem;
+    color:#64748B;
+    line-height:1.4;
 }
 
-.status-critical {
-    color: #B91C1C;
-    background: rgba(239,68,68,.14);
+/* ===== TABLES / CHARTS ===== */
+
+[data-testid="stDataFrame"] {
+    border-radius:24px;
+    overflow:hidden;
+    border:1px solid rgba(15,23,42,.07);
+    box-shadow:0 18px 55px rgba(15,23,42,.06);
+    background:rgba(255,255,255,.80);
 }
 
-.hero-meta {
-    padding: 9px 15px;
-    border-radius: 999px;
-    background: rgba(15,23,42,.06);
-    color: #475569;
-    font-size: .78rem;
-    font-weight: 800;
+.js-plotly-plot,
+.plot-container,
+svg.main-svg {
+    background:transparent !important;
+    border:none !important;
+    box-shadow:none !important;
 }
 
+/* ===== FLOATING PDF ===== */
+
+.floating-pdf {
+    position: fixed;
+    right: 28px;
+    bottom: 28px;
+    z-index: 9999;
+}
+
+.floating-pdf .stDownloadButton button {
+    min-height: 46px !important;
+    padding: 0 22px !important;
+    box-shadow: 0 18px 48px rgba(79,70,229,.28) !important;
+}
+
+/* ===== RESPONSIVE ===== */
+
+@media (max-width: 1100px) {
+    .block-container {
+        padding: 1rem 1.3rem 5rem 1.3rem !important;
+    }
+
+    .executive-grid {
+        grid-template-columns: repeat(2, minmax(180px, 1fr)) !important;
+    }
+}
+
+@media (max-width: 700px) {
+    .executive-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    div[data-testid="stSegmentedControl"] > div {
+        width: 100% !important;
+        flex-wrap: wrap !important;
+    }
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -442,7 +429,7 @@ def load_data():
         df = pd.DataFrame(response.data)
 
         if not df.empty:
-            df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
+            df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce", utc=True)
             df["latency_ms"] = pd.to_numeric(df["latency_ms"], errors="coerce").fillna(0)
             df["http_code"] = pd.to_numeric(df["http_code"], errors="coerce")
 
@@ -515,7 +502,7 @@ section = st.segmented_control(
     label_visibility="collapsed",
 )
 
-control1, control2, control3 = st.columns([4, 1.4, 1])
+control1, control2, control3 = st.columns([2.4, 1.1, .7])
 
 with control1:
     endpoint_seleccionado = st.selectbox(
@@ -538,7 +525,6 @@ with control3:
         st.rerun()
 
 df_base = df.copy()
-
 now_utc = pd.Timestamp.now(tz="UTC")
 
 if ventana == "Últimas 24 horas":
@@ -612,36 +598,6 @@ servicio_mas_caido = df_servicios.sort_values("uptime").iloc[0]
 servicio_mas_lento = df_servicios.sort_values("latencia_promedio", ascending=False).iloc[0]
 servicio_mas_saludable = df_servicios.sort_values("health_score", ascending=False).iloc[0]
 servicio_mas_evidencia = df_servicios.sort_values("evidencia", ascending=False).iloc[0]
-
-if uptime_porcentaje >= 99 and total_fallos == 0:
-    estado_global = "OPERATIVO"
-    estado_class = "status-ok"
-    estado_texto = "La operación se mantiene estable, sin incidentes críticos en la ventana seleccionada."
-elif uptime_porcentaje >= 95:
-    estado_global = "DEGRADADO"
-    estado_class = "status-warn"
-    estado_texto = "Se detectan señales de degradación o incidentes aislados que requieren seguimiento."
-else:
-    estado_global = "CRÍTICO"
-    estado_class = "status-critical"
-    estado_texto = "La disponibilidad evidencia afectación relevante y riesgo operativo verificable."
-
-st.markdown(f"""
-<div class="hero-panel">
-    <div class="hero-title">Centro de Control Aurora</div>
-    <div class="hero-subtitle">
-        {estado_texto} La vista consolida disponibilidad, latencia, incidentes y evidencia técnica
-        para trazabilidad operacional y soporte probatorio.
-    </div>
-    <div class="hero-status-row">
-        <div class="status-pill {estado_class}">{estado_global}</div>
-        <div class="hero-meta">{uptime_porcentaje:.2f}% disponibilidad</div>
-        <div class="hero-meta">{total_fallos} incidentes</div>
-        <div class="hero-meta">{total_checks} verificaciones</div>
-        <div class="hero-meta">{latencia_promedio:.0f} ms promedio</div>
-    </div>
-</div>
-""", unsafe_allow_html=True)
 
 if section == "Resumen Ejecutivo":
     st.markdown('<div class="section-title">Gobierno Ejecutivo de Disponibilidad</div>', unsafe_allow_html=True)
@@ -773,5 +729,12 @@ elif section == "Evidencia Forense":
     df_evidencia_view["ssl_issuer"] = df_evidencia_view["ssl_issuer"].fillna("No disponible").apply(lambda x: x[:50] + "..." if isinstance(x, str) and len(x) > 50 else x)
     df_evidencia_view["ssl_expiry"] = df_evidencia_view["ssl_expiry"].fillna("No disponible")
     df_evidencia_view["screenshot_url"] = df_evidencia_view["screenshot_url"].fillna("Sin captura")
-    df_evidencia_view = df_evidencia_view.rename(columns={"timestamp": "Fecha", "url": "Servicio", "content_hash": "Hash SHA256", "ssl_issuer": "Emisor SSL", "ssl_expiry": "Expira SSL", "screenshot_url": "Evidencia"})
+    df_evidencia_view = df_evidencia_view.rename(columns={
+        "timestamp": "Fecha",
+        "url": "Servicio",
+        "content_hash": "Hash SHA256",
+        "ssl_issuer": "Emisor SSL",
+        "ssl_expiry": "Expira SSL",
+        "screenshot_url": "Evidencia"
+    })
     st.dataframe(df_evidencia_view, use_container_width=True, hide_index=True, height=560)
