@@ -17,16 +17,18 @@ st.markdown("""
 <style>
 .stApp {
     background:
-        radial-gradient(circle at top right, rgba(79,70,229,0.08), transparent 25%),
-        radial-gradient(circle at bottom left, rgba(6,182,212,0.08), transparent 22%),
-        #F6F8FC;
+        radial-gradient(circle at 15% 20%, rgba(59,130,246,0.16), transparent 24%),
+        radial-gradient(circle at 85% 15%, rgba(16,185,129,0.14), transparent 28%),
+        radial-gradient(circle at 50% 80%, rgba(139,92,246,0.14), transparent 30%),
+        linear-gradient(180deg, #F8FAFC 0%, #EEF4FF 100%);
     color: #0F172A;
 }
 
 [data-testid="stSidebar"] {
-    background: rgba(255,255,255,0.88);
-    backdrop-filter: blur(18px);
-    border-right: 1px solid rgba(15,23,42,0.06);
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(24px);
+    border-right: 1px solid rgba(255,255,255,0.35);
+    box-shadow: 6px 0 40px rgba(15,23,42,0.04);
 }
 
 [data-testid="stSidebar"] * {
@@ -47,6 +49,19 @@ st.markdown("""
     padding-bottom: 28px;
 }
 
+fig_latencia.update_layout(
+    paper_bgcolor="rgba(255,255,255,0)",
+    plot_bgcolor="rgba(255,255,255,0)",
+)
+
+.js-plotly-plot,
+.plot-container,
+svg.main-svg {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
 .brand-wrap {
     display: flex;
     align-items: center;
@@ -57,6 +72,12 @@ st.markdown("""
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.brand-logo svg {
+    filter:
+        drop-shadow(0 0 18px rgba(79,70,229,0.28))
+        drop-shadow(0 0 32px rgba(6,182,212,0.16));
 }
 
 .brand-text {
@@ -147,13 +168,31 @@ st.markdown("""
 
 .stButton > button,
 .stDownloadButton > button {
-    border-radius: 12px;
-    border: none;
-    background: linear-gradient(135deg,#4F46E5,#06B6D4);
+    width: 100%;
+    border-radius: 18px;
+    border: 1px solid rgba(255,255,255,0.25);
+    background:
+        linear-gradient(
+            135deg,
+            rgba(79,70,229,0.88),
+            rgba(6,182,212,0.88)
+        );
     color: white;
-    font-weight: 800;
-    padding: 0.72rem 1rem;
-    box-shadow: 0 10px 24px rgba(79,70,229,0.18);
+    font-weight: 700;
+    letter-spacing: -.02em;
+    padding: .9rem 1rem;
+    box-shadow:
+        0 10px 30px rgba(79,70,229,0.18),
+        inset 0 1px 1px rgba(255,255,255,0.18);
+    transition: all .18s ease;
+}
+
+.stButton > button:hover,
+.stDownloadButton > button:hover {
+    transform: translateY(-2px);
+    box-shadow:
+        0 16px 38px rgba(79,70,229,0.28),
+        inset 0 1px 1px rgba(255,255,255,0.22);
 }
 
 .js-plotly-plot {
@@ -186,6 +225,19 @@ section[data-testid="stSidebar"] {
     min-width: 290px !important;
     width: 290px !important;
 }
+
+.main .block-container {
+    max-width: 100% !important;
+    padding-left: 3rem;
+    padding-right: 3rem;
+    transition: all .2s ease;
+}
+
+section[data-testid="stSidebar"][aria-expanded="false"] + div .block-container {
+    padding-left: 2rem;
+    max-width: 96%;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -333,7 +385,7 @@ if endpoint_seleccionado != "Todas":
 else:
     df_filtrado = df.copy()
 
-section = st.sidebar.radio(
+section = st.sidebar.segmented_control(
     "Navegación",
     ["Resumen Ejecutivo", "Latencia", "Incidentes", "Evidencia Forense"],
 )
@@ -478,7 +530,7 @@ if section == "Resumen Ejecutivo":
     df_health["latencia_promedio"] = df_health["latencia_promedio"].round(0)
     df_health["latencia_maxima"] = df_health["latencia_maxima"].round(0)
 
-    st.dataframe(
+    st.markdown(df.to_html(
         df_health[
             [
                 "url",
@@ -493,7 +545,7 @@ if section == "Resumen Ejecutivo":
         ],
         use_container_width=True,
         hide_index=True,
-    )
+    ), unsafe_allow_html=True)
 
 elif section == "Latencia":
     st.markdown('<div class="section-title">Evolución de Tiempos de Respuesta</div>', unsafe_allow_html=True)
@@ -583,12 +635,12 @@ elif section == "Incidentes":
             "error_type": "Evento"
         })
 
-        st.dataframe(
+        st.markdown(df.to_html(
             df_fallos_view,
             use_container_width=True,
             hide_index=True,
             height=520,
-        )
+        ), unsafe_allow_html=True)
 
 elif section == "Evidencia Forense":
     st.markdown(
@@ -622,9 +674,9 @@ elif section == "Evidencia Forense":
         "screenshot_url": "Evidencia"
     })
 
-    st.dataframe(
+    st.markdown(df.to_html(
         df_evidencia_view,
         use_container_width=True,
         hide_index=True,
         height=520,
-    )
+    ), unsafe_allow_html=True)
