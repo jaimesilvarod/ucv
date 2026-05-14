@@ -18,19 +18,20 @@ st.set_page_config(
 st.markdown("""
 <style>
 
-/* ===== BASE ===== */
+/* ===== APP ===== */
 
 .stApp {
     background:
-        radial-gradient(circle at top right, rgba(37,99,235,0.08), transparent 30%),
-        linear-gradient(180deg, #F4F7FB 0%, #EEF2FF 100%);
+        radial-gradient(circle at top right, rgba(79,70,229,0.08), transparent 25%),
+        radial-gradient(circle at bottom left, rgba(6,182,212,0.08), transparent 22%),
+        #F6F8FC;
     color: #0F172A;
 }
 
 /* ===== SIDEBAR ===== */
 
 [data-testid="stSidebar"] {
-    background: rgba(255,255,255,0.88);
+    background: rgba(255,255,255,0.82);
     backdrop-filter: blur(18px);
     border-right: 1px solid rgba(15,23,42,0.06);
 }
@@ -42,146 +43,107 @@ st.markdown("""
 /* ===== MAIN ===== */
 
 .block-container {
-    max-width: 1500px;
+    max-width: 1600px;
     padding-top: 2rem;
-    padding-bottom: 3rem;
+    padding-bottom: 5rem;
 }
 
 /* ===== HERO ===== */
 
-.hero-card {
-    padding: 42px;
-    border-radius: 30px;
-    background:
-        linear-gradient(135deg, rgba(255,255,255,0.95), rgba(248,250,252,0.92));
-    border: 1px solid rgba(15,23,42,0.06);
-    box-shadow:
-        0 10px 40px rgba(15,23,42,0.06),
-        0 2px 8px rgba(15,23,42,0.04);
-    margin-bottom: 28px;
+.hero {
+    padding-top: 2rem;
+    padding-bottom: 3rem;
 }
 
 .hero-pill {
-    display: inline-block;
-    padding: 8px 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 14px;
     border-radius: 999px;
-    background: rgba(37,99,235,0.08);
-    color: #2563EB;
-    font-size: 0.8rem;
+    background: rgba(79,70,229,0.08);
+    color: #4F46E5;
+    font-size: 0.78rem;
     font-weight: 700;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
 }
 
 .hero-title {
-    font-size: 3.2rem;
-    line-height: 1;
+    font-size: 4rem;
+    line-height: 0.95;
     font-weight: 900;
-    letter-spacing: -0.07em;
+    letter-spacing: -0.08em;
     color: #0F172A;
-    margin-bottom: 14px;
+    max-width: 950px;
 }
 
 .hero-subtitle {
-    font-size: 1.05rem;
+    margin-top: 22px;
+    font-size: 1.08rem;
+    line-height: 1.7;
     color: #475569;
-    max-width: 850px;
-    line-height: 1.6;
+    max-width: 820px;
 }
 
-/* ===== KPI CARDS ===== */
+/* ===== KPI STRIP ===== */
 
-[data-testid="stMetric"] {
-    background: rgba(255,255,255,0.82);
-    backdrop-filter: blur(14px);
-    border-radius: 24px;
-    padding: 22px;
-    border: 1px solid rgba(15,23,42,0.05);
-    box-shadow:
-        0 4px 20px rgba(15,23,42,0.04);
+.kpi-strip {
+    display: flex;
+    gap: 42px;
+    padding-top: 1rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid rgba(15,23,42,0.08);
+    margin-bottom: 2rem;
 }
 
-/* ELIMINA cajas externas */
-[data-testid="stVerticalBlock"] > div:has([data-testid="stMetric"]) {
+.kpi-item {
+    min-width: 180px;
+}
+
+.kpi-label {
+    font-size: 0.82rem;
+    color: #64748B;
+    margin-bottom: 8px;
+}
+
+.kpi-value {
+    font-size: 2.4rem;
+    font-weight: 800;
+    letter-spacing: -0.06em;
+    color: #0F172A;
+}
+
+/* ===== PLOTLY ===== */
+
+.js-plotly-plot {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
-    padding: 0 !important;
 }
 
-[data-testid="stMetricLabel"] {
-    color: #64748B;
-    font-size: 0.9rem;
-    font-weight: 600;
-}
+/* ===== DATAFRAME ===== */
 
-[data-testid="stMetricValue"] {
-    color: #0F172A;
-    font-size: 2.4rem;
-    font-weight: 800;
-    letter-spacing: -0.05em;
-}
-
-/* ===== TABS ===== */
-
-button[data-baseweb="tab"] {
-    background: transparent;
-    border: none;
-    border-bottom: 2px solid transparent;
-    border-radius: 0;
-    color: #64748B;
-    font-weight: 600;
-    padding: 14px 8px;
-    margin-right: 24px;
-}
-
-button[data-baseweb="tab"]:hover {
-    color: #0F172A;
-}
-
-button[data-baseweb="tab"][aria-selected="true"] {
-    color: #2563EB;
-    border-bottom: 2px solid #2563EB;
-    background: transparent;
+[data-testid="stDataFrame"] {
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid rgba(15,23,42,0.06);
 }
 
 /* ===== BUTTONS ===== */
 
 .stButton > button,
 .stDownloadButton > button {
-    border-radius: 14px;
+    border-radius: 12px;
     border: none;
-    background: linear-gradient(135deg,#2563EB,#4F46E5);
+    background: linear-gradient(135deg,#4F46E5,#06B6D4);
     color: white;
     font-weight: 700;
-    padding: 0.75rem 1rem;
-    box-shadow: 0 8px 24px rgba(37,99,235,0.22);
-}
-
-.stButton > button:hover,
-.stDownloadButton > button:hover {
-    transform: translateY(-1px);
-}
-
-/* ===== DATAFRAMES ===== */
-
-[data-testid="stDataFrame"] {
-    border-radius: 22px;
-    overflow: hidden;
-    border: 1px solid rgba(15,23,42,0.06);
+    padding: 0.72rem 1rem;
     box-shadow:
-        0 8px 24px rgba(15,23,42,0.04);
+        0 10px 24px rgba(79,70,229,0.18);
 }
 
-/* ===== PLOTLY ===== */
-
-.js-plotly-plot {
-    border-radius: 24px;
-    background: rgba(255,255,255,0.78);
-    padding: 10px;
-    border: 1px solid rgba(15,23,42,0.05);
-}
-
-/* ===== TYPOGRAPHY ===== */
+/* ===== TYPO ===== */
 
 html, body, [class*="css"] {
     font-family:
@@ -275,13 +237,21 @@ def load_data():
 
 # 4. INTERFAZ PRINCIPAL
 st.markdown("""
-<div class="hero-card">
-<div class="hero-pill">MONITOREO FORENSE ACTIVO</div>
-<div class="hero-title">Panel de Auditoría de Infraestructura Web</div>
+<div class="hero">
+
+<div class="hero-pill">
+🛡️ MONITOREO FORENSE ACTIVO
+</div>
+
+<div class="hero-title">
+Infraestructura Web y Evidencia Operacional
+</div>
+
 <div class="hero-subtitle">
 Observabilidad avanzada de disponibilidad, latencia, DNS, certificados SSL,
 integridad criptográfica y comportamiento operativo de plataformas académicas.
 </div>
+
 </div>
 """, unsafe_allow_html=True)
 
@@ -310,21 +280,31 @@ else:
     latencia_promedio = df_filtrado['latency_ms'].mean()
 
     # --- MÉTRICAS GLOBALES (KPIs) ---
-    col1, col2, col3, col4 = st.columns(4)
+    st.markdown(f"""
+    <div class="kpi-strip">
     
-    with col1:
-            st.metric("Uptime General", f"{uptime_porcentaje:.2f}%")
-            
-    with col2:
-            st.metric("Total de Muestras", total_checks)
-            
-    with col3:
-            st.metric("Incidentes Registrados", total_fallos)
-            
-    with col4:
-            st.metric("Latencia Promedio", f"{latencia_promedio:.0f} ms")
-
-    st.markdown("---")
+    <div class="kpi-item">
+    <div class="kpi-label">UPTIME GENERAL</div>
+    <div class="kpi-value">{uptime:.2f}%</div>
+    </div>
+    
+    <div class="kpi-item">
+    <div class="kpi-label">INCIDENTES</div>
+    <div class="kpi-value">{incidentes}</div>
+    </div>
+    
+    <div class="kpi-item">
+    <div class="kpi-label">LATENCIA PROMEDIO</div>
+    <div class="kpi-value">{latencia} ms</div>
+    </div>
+    
+    <div class="kpi-item">
+    <div class="kpi-label">MUESTRAS</div>
+    <div class="kpi-value">{muestras}</div>
+    </div>
+    
+    </div>
+    """, unsafe_allow_html=True)
 
     # --- PESTAÑAS DE ANÁLISIS ---
     tab1, tab2, tab3 = st.tabs(["📈 Análisis de Latencia", "🚨 Registro de Incidentes", "🔐 Evidencia Forense (Hashes & SSL)"])
