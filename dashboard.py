@@ -72,25 +72,6 @@ def generar_pdf_bytes(df_fallos, uptime, total_incidentes):
         with open(tmp.name, "rb") as f:
             return f.read()
 
-def aplicar_estilo_premium():
-    st.markdown("""
-        <style>
-        /* Ocultar solo el footer que dice "Made with Streamlit" */
-        footer {visibility: hidden;}
-        
-        /* Borde decorativo para las métricas (estilo Power BI) que funciona en Día/Noche */
-        div[data-testid="metric-container"] {
-            padding: 10px 15px;
-            border-left: 5px solid #00C853; /* Borde indicador verde */
-            border-radius: 4px;
-            background-color: rgba(128, 128, 128, 0.05); /* Fondo sutil adaptable */
-        }
-        </style>
-        """, unsafe_allow_html=True)
-
-# 3. APLICAR ESTILOS Y CONECTAR A BD
-aplicar_estilo_premium()
-
 @st.cache_resource
 def init_connection():
     url = st.secrets["SUPABASE_URL"]
@@ -139,10 +120,22 @@ else:
 
     # --- MÉTRICAS GLOBALES (KPIs) ---
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Uptime General", f"{uptime_porcentaje:.2f}%")
-    col2.metric("Total de Muestras", total_checks)
-    col3.metric("Incidentes Registrados", total_fallos)
-    col4.metric("Latencia Promedio", f"{latencia_promedio:.0f} ms")
+    
+    with col1:
+        with st.container(border=True):
+            st.metric("Uptime General", f"{uptime_porcentaje:.2f}%")
+            
+    with col2:
+        with st.container(border=True):
+            st.metric("Total de Muestras", total_checks)
+            
+    with col3:
+        with st.container(border=True):
+            st.metric("Incidentes Registrados", total_fallos)
+            
+    with col4:
+        with st.container(border=True):
+            st.metric("Latencia Promedio", f"{latencia_promedio:.0f} ms")
 
     st.markdown("---")
 
