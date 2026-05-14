@@ -9,6 +9,35 @@ import uuid
 import tempfile
 from PIL import Image, ImageDraw
 from pathlib import Path
+from pyhanko.sign import signers
+from pyhanko.pdf_utils.incremental_writer import IncrementalPdfFileWriter
+
+
+def firmar_pdf_pades(pdf_bytes: bytes, p12_path: str, password: str) -> bytes:
+    signer = signers.SimpleSigner.load_pkcs12(
+        pfx_file=p12_path,
+        passphrase=password.encode()
+    )
+
+    input_pdf = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+    input_pdf.write(pdf_bytes)
+    input_pdf.close()
+
+    output_pdf = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+    output_pdf.close()
+
+    with open(input_pdf.name, "rb") as inf:
+        writer = IncrementalPdfFileWriter(inf)
+        with open(output_pdf.name, "wb") as outf:
+            signers.sign_pdf(
+                writer,
+                signers.PdfSignatureMetadata(field_name="FirmaAurora"),
+                signer=signer,
+                output=outf,
+            )
+
+    with open(output_pdf.name, "rb") as f:
+        return f.read()
 
 AURORA_VERSION = "1.0.0"
 
