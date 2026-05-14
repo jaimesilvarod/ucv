@@ -434,14 +434,28 @@ endpoints_disponibles = sorted(df["url"].dropna().unique().tolist())
 if "section" not in st.session_state:
     st.session_state.section = "Resumen Ejecutivo"
 
-top1, top2, top3 = st.columns([3.2, 1, 1])
+section = st.segmented_control(
+    "Vista",
+    ["Resumen Ejecutivo", "Latencia", "Incidentes", "Evidencia Forense"],
+    default=st.session_state.section,
+    key="section",
+    label_visibility="collapsed",
+)
 
-with top1:
+control1, control2 = st.columns([5, 1])
+
+with control1:
     endpoint_seleccionado = st.selectbox(
-        "Plataforma",
+        "Mostrando",
         ["Todas"] + endpoints_disponibles,
+        format_func=lambda x: "Mostrando: TODOS" if x == "Todas" else f"Mostrando: {short_url(x, 80)}",
         label_visibility="collapsed",
     )
+
+with control2:
+    if st.button("Actualizar"):
+        load_data.clear()
+        st.rerun()
 
 if endpoint_seleccionado != "Todas":
     df_filtrado = df[df["url"] == endpoint_seleccionado].copy()
@@ -489,18 +503,15 @@ pdf_bytes = generar_pdf_bytes(
     latencia_promedio,
 )
 
-with top2:
-    if st.button("Actualizar"):
-        load_data.clear()
-        st.rerun()
-
-with top3:
-    st.download_button(
-        label="Descargar PDF",
-        data=pdf_bytes,
-        file_name=f"Aurora_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
-        mime="application/pdf",
-    )
+st.markdown('<div class="floating-pdf">', unsafe_allow_html=True)
+st.download_button(
+    label="Descargar informe PDF",
+    data=pdf_bytes,
+    file_name=f"Aurora_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
+    mime="application/pdf",
+    key="floating_pdf",
+)
+st.markdown('</div>', unsafe_allow_html=True)
 
 nav1, nav2, nav3, nav4 = st.columns([1, 1, 1, 1])
 
