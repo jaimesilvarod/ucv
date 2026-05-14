@@ -15,6 +15,122 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+st.markdown("""
+<style>
+/* App base */
+.stApp {
+    background:
+        radial-gradient(circle at top left, rgba(37, 99, 235, 0.18), transparent 32%),
+        radial-gradient(circle at top right, rgba(225, 29, 72, 0.14), transparent 28%),
+        linear-gradient(180deg, #0B1020 0%, #0F172A 100%);
+    color: #F8FAFC;
+}
+
+/* Sidebar */
+[data-testid="stSidebar"] {
+    background: rgba(15, 23, 42, 0.92);
+    border-right: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+/* Main width */
+.block-container {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+    max-width: 1500px;
+}
+
+/* Titles */
+h1, h2, h3 {
+    letter-spacing: -0.04em;
+}
+
+/* KPI cards */
+[data-testid="stMetric"] {
+    background: linear-gradient(145deg, rgba(17, 24, 39, 0.96), rgba(30, 41, 59, 0.88));
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 22px;
+    padding: 22px;
+    box-shadow: 0 18px 45px rgba(0,0,0,0.35);
+}
+
+[data-testid="stMetricLabel"] {
+    color: #94A3B8;
+    font-size: 0.9rem;
+}
+
+[data-testid="stMetricValue"] {
+    color: #F8FAFC;
+    font-size: 2rem;
+    font-weight: 800;
+}
+
+/* Tabs */
+button[data-baseweb="tab"] {
+    background: rgba(15, 23, 42, 0.75);
+    border-radius: 14px;
+    margin-right: 8px;
+    padding: 10px 18px;
+    border: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+button[data-baseweb="tab"][aria-selected="true"] {
+    background: linear-gradient(135deg, #E11D48, #2563EB);
+    color: white;
+}
+
+/* Dataframes */
+[data-testid="stDataFrame"] {
+    border-radius: 18px;
+    overflow: hidden;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+/* Buttons */
+.stButton > button, .stDownloadButton > button {
+    border-radius: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    background: linear-gradient(135deg, #2563EB, #E11D48);
+    color: white;
+    font-weight: 700;
+    padding: 0.7rem 1rem;
+}
+
+/* Premium header card */
+.hero-card {
+    padding: 30px 34px;
+    border-radius: 28px;
+    background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(30,41,59,0.86));
+    border: 1px solid rgba(148,163,184,0.18);
+    box-shadow: 0 24px 70px rgba(0,0,0,0.38);
+    margin-bottom: 26px;
+}
+
+.hero-title {
+    font-size: 2.8rem;
+    font-weight: 900;
+    letter-spacing: -0.06em;
+    margin-bottom: 6px;
+}
+
+.hero-subtitle {
+    color: #CBD5E1;
+    font-size: 1.05rem;
+}
+
+.status-pill {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(225, 29, 72, 0.16);
+    color: #FDA4AF;
+    border: 1px solid rgba(225, 29, 72, 0.35);
+    font-weight: 700;
+    font-size: 0.85rem;
+    margin-bottom: 14px;
+}
+</style>
+""", unsafe_allow_html=True)
+
 # 2. DEFINICIÓN DE CLASES Y FUNCIONES
 class ReporteForensePDF(FPDF):
     def header(self):
@@ -91,8 +207,15 @@ def load_data():
     return df
 
 # 4. INTERFAZ PRINCIPAL
-st.title("🛡️ Panel de Auditoría de Infraestructura Web")
-st.markdown("Monitor forense de disponibilidad, latencia y cambios de estado.")
+st.markdown("""
+<div class="hero-card">
+    <div class="status-pill">MONITOREO FORENSE ACTIVO</div>
+    <div class="hero-title">Panel de Auditoría de Infraestructura Web</div>
+    <div class="hero-subtitle">
+        Observabilidad técnica de disponibilidad, latencia, certificados, errores HTTP, DNS y evidencia criptográfica.
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 df = load_data()
 
@@ -152,13 +275,35 @@ else:
             template="plotly_dark"
         )
         fig_latencia.update_layout(
+            template="plotly_dark",
+            height=520,
             plot_bgcolor="rgba(0,0,0,0)",
             paper_bgcolor="rgba(0,0,0,0)",
-            xaxis=dict(showgrid=False, title=""),
-            yaxis=dict(showgrid=True, gridcolor="#333333", title="Latencia (ms)"),
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-            margin=dict(l=0, r=0, t=30, b=0)
+            font=dict(color="#F8FAFC", family="Inter, sans-serif"),
+            xaxis=dict(
+                showgrid=False,
+                title="",
+                color="#CBD5E1"
+            ),
+            yaxis=dict(
+                showgrid=True,
+                gridcolor="rgba(148,163,184,0.18)",
+                title="Latencia (ms)",
+                color="#CBD5E1"
+            ),
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.08,
+                xanchor="right",
+                x=1,
+                bgcolor="rgba(15,23,42,0.65)",
+                bordercolor="rgba(148,163,184,0.18)",
+                borderwidth=1
+            ),
+            margin=dict(l=10, r=10, t=45, b=10),
         )
+        fig_latencia.update_traces(line=dict(width=3), mode="lines+markers")
         st.plotly_chart(fig_latencia, use_container_width=True)
 
     with tab2:
