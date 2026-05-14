@@ -348,7 +348,7 @@ class ReporteForensePDF(FPDF):
         self.rect(0, 0, 210, 30, "F")
 
         self.set_fill_color(79, 70, 229)
-        self.rounded_rect(10, 7, 16, 16, 4, "F")
+        self.rect(10, 7, 16, 16, "F")
 
         self.set_text_color(255, 255, 255)
         self.set_font("Arial", "B", 16)
