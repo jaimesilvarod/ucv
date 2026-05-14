@@ -8,6 +8,8 @@ import hashlib
 import uuid
 import tempfile
 
+AURORA_VERSION = "1.0.0"
+
 st.set_page_config(
     page_title="Aurora",
     page_icon="🌌",
@@ -20,11 +22,11 @@ st.markdown("""
 <style>
 .stApp {
     background:
-        radial-gradient(circle at 8% 14%, rgba(79,70,229,.24), transparent 24%),
-        radial-gradient(circle at 28% 8%, rgba(6,182,212,.18), transparent 28%),
-        radial-gradient(circle at 74% 6%, rgba(16,185,129,.22), transparent 30%),
-        radial-gradient(circle at 88% 36%, rgba(34,211,238,.14), transparent 28%),
-        radial-gradient(circle at 52% 88%, rgba(139,92,246,.15), transparent 32%),
+        radial-gradient(circle at 8% 14%, rgba(79,70,229,.22), transparent 24%),
+        radial-gradient(circle at 30% 8%, rgba(6,182,212,.16), transparent 28%),
+        radial-gradient(circle at 74% 6%, rgba(16,185,129,.19), transparent 30%),
+        radial-gradient(circle at 88% 36%, rgba(34,211,238,.12), transparent 28%),
+        radial-gradient(circle at 52% 88%, rgba(139,92,246,.13), transparent 32%),
         linear-gradient(180deg, #F8FBFF 0%, #EEF4FF 48%, #F7F9FF 100%);
     color: #0F172A;
     margin-top: 0rem !important;
@@ -40,8 +42,6 @@ section[data-testid="stSidebar"] { display:none !important; }
 html, body, [class*="css"] {
     font-family: Inter, ui-sans-serif, system-ui, sans-serif;
 }
-
-h1,h2,h3 { letter-spacing:-.05em; }
 
 header[data-testid="stHeader"],
 [data-testid="stToolbar"],
@@ -64,6 +64,7 @@ footer { visibility: hidden !important; }
     display:flex;
     align-items:center;
     gap:14px;
+    flex-wrap:wrap;
 }
 
 .brand-logo svg {
@@ -88,8 +89,21 @@ footer { visibility: hidden !important; }
     letter-spacing:.08em;
 }
 
-/* ===== COMPACT NAVIGATION ===== */
+.standards-badge {
+    display:inline-flex;
+    align-items:center;
+    padding:8px 14px;
+    border-radius:999px;
+    background:rgba(255,255,255,.50);
+    border:1px solid rgba(255,255,255,.62);
+    box-shadow:0 10px 30px rgba(15,23,42,.04);
+    font-size:.74rem;
+    font-weight:850;
+    color:#64748B;
+    backdrop-filter:blur(18px);
+}
 
+/* NAV */
 div[data-testid="stSegmentedControl"] {
     max-width: 620px !important;
     margin: 14px 0 18px 0 !important;
@@ -101,54 +115,38 @@ div[data-testid="stSegmentedControl"] > div {
     gap: 6px !important;
     padding: 6px !important;
     border-radius: 18px !important;
-    background: rgba(255,255,255,.62) !important;
-    border: 1px solid rgba(255,255,255,.70) !important;
+    background: rgba(255,255,255,.54) !important;
+    border: 1px solid rgba(255,255,255,.68) !important;
     box-shadow:
-        0 12px 36px rgba(15,23,42,.06),
+        0 12px 36px rgba(15,23,42,.045),
         inset 0 1px 0 rgba(255,255,255,.58) !important;
     backdrop-filter: blur(22px) !important;
-    -webkit-backdrop-filter: blur(22px) !important;
-}
-
-div[data-testid="stSegmentedControl"] label {
-    width: auto !important;
 }
 
 div[data-testid="stSegmentedControl"] label > div {
-    width: auto !important;
-    justify-content: center !important;
     border-radius: 13px !important;
     min-height: 38px !important;
     padding: 0 16px !important;
     font-size: .82rem !important;
     font-weight: 850 !important;
     color: #475569 !important;
-    border: 1px solid transparent !important;
     transition: all .18s ease !important;
-}
-
-div[data-testid="stSegmentedControl"] label:hover > div {
-    background: rgba(255,255,255,.68) !important;
-    color: #0F172A !important;
 }
 
 div[data-testid="stSegmentedControl"] label[aria-checked="true"] > div,
 div[data-testid="stSegmentedControl"] label[data-baseweb="radio"]:has(input:checked) > div {
     background: linear-gradient(135deg,#4F46E5,#06B6D4,#10B981) !important;
     color: white !important;
-    box-shadow:
-        0 12px 28px rgba(79,70,229,.24),
-        inset 0 1px 0 rgba(255,255,255,.25) !important;
+    box-shadow: 0 12px 28px rgba(79,70,229,.22) !important;
 }
 
-/* ===== FILTER BAR ===== */
-
+/* CONTROLS */
 div[data-baseweb="select"] > div {
     min-height: 44px !important;
     border-radius: 16px !important;
-    background: rgba(255,255,255,.78) !important;
+    background: rgba(255,255,255,.72) !important;
     border: 1px solid rgba(255,255,255,.70) !important;
-    box-shadow: 0 10px 28px rgba(15,23,42,.05) !important;
+    box-shadow: 0 10px 28px rgba(15,23,42,.04) !important;
 }
 
 button[kind="primary"],
@@ -160,110 +158,76 @@ button[kind="secondary"],
     background:linear-gradient(135deg,#4F46E5,#06B6D4) !important;
     color:white !important;
     border:0 !important;
-    box-shadow:0 12px 30px rgba(79,70,229,.22) !important;
+    box-shadow:0 12px 30px rgba(79,70,229,.20) !important;
     font-weight:850 !important;
     padding: 0 22px !important;
 }
 
-/* ===== SECTIONS ===== */
-
+/* SECTIONS */
 .section-title{
     margin-top:12px !important;
     margin-bottom:4px !important;
-    font-size:1.55rem !important;
-    font-weight:900 !important;
+    font-size:1.48rem !important;
+    font-weight:950 !important;
     letter-spacing:-.05em !important;
 }
 
 .section-subtitle{
     margin-bottom:10px !important;
-    font-size:.95rem !important;
+    font-size:.92rem !important;
     color:#64748B !important;
 }
 
-/* ===== CARDS ===== */
-
-.executive-grid{
-    display:grid !important;
-    grid-template-columns:repeat(4,minmax(180px,1fr)) !important;
-    gap:16px !important;
-    margin-top:16px !important;
-    margin-bottom:20px !important;
+/* COMPACT METRICS */
+.metric-compact-grid {
+    display:grid;
+    grid-template-columns: repeat(4, minmax(180px, 1fr));
+    gap:14px;
+    margin:16px 0 24px 0;
 }
 
-.metric-card{
-    position:relative !important;
-    padding:20px 24px !important;
-    min-height:138px !important;
-    border-radius:24px !important;
-    background:rgba(255,255,255,.46) !important;
-    border:1px solid rgba(255,255,255,.62) !important;
+.metric-compact {
+    padding:16px 18px;
+    border-radius:22px;
+    background:rgba(255,255,255,.38);
+    border:1px solid rgba(255,255,255,.62);
+    backdrop-filter:blur(24px) saturate(112%);
+    -webkit-backdrop-filter:blur(24px) saturate(112%);
     box-shadow:
-        0 18px 46px rgba(15,23,42,.045),
-        inset 0 1px 0 rgba(255,255,255,.70) !important;
-    backdrop-filter:blur(24px) saturate(115%) !important;
-    -webkit-backdrop-filter:blur(24px) saturate(115%) !important;
-    transition:all .18s ease !important;
-    overflow:hidden !important;
+        0 14px 38px rgba(15,23,42,.04),
+        inset 0 1px 0 rgba(255,255,255,.62);
 }
 
-.metric-card::before {
-    display:none !important;
-}
-
-.metric-card:hover {
-    transform:translateY(-4px);
-    box-shadow:0 26px 80px rgba(15,23,42,.12);
-}
-
-.metric-icon {
-    position:relative;
-    width:34px;
-    height:34px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    border-radius:999px;
-    background:rgba(255,255,255,.55);
-    border:1px solid rgba(255,255,255,.65);
-    font-size:1.15rem;
-    margin-bottom:18px;
-}
-
-.metric-label {
-    position:relative;
-    font-size:.75rem;
+.metric-compact-label {
+    font-size:.72rem;
     font-weight:900;
-    letter-spacing:.06em;
     color:#64748B;
+    letter-spacing:.06em;
     text-transform:uppercase;
 }
 
-.metric-value {
-    position:relative;
-    margin-top:12px;
-    font-size:2.15rem;
+.metric-compact-value {
+    margin-top:8px;
+    font-size:1.8rem;
     font-weight:950;
-    letter-spacing:-.06em;
+    letter-spacing:-.05em;
     color:#0F172A;
 }
 
-.metric-note {
-    position:relative;
-    margin-top:12px;
-    font-size:.82rem;
+.metric-compact-note {
+    margin-top:6px;
+    font-size:.78rem;
     color:#64748B;
-    line-height:1.4;
+    line-height:1.35;
 }
 
-/* ===== TABLES / CHARTS ===== */
-
+/* TABLES / CHARTS */
 [data-testid="stDataFrame"] {
     border-radius:24px;
     overflow:hidden;
-    border:1px solid rgba(15,23,42,.07);
-    box-shadow:0 18px 55px rgba(15,23,42,.06);
-    background:rgba(255,255,255,.80);
+    border:1px solid rgba(15,23,42,.06);
+    box-shadow:0 18px 55px rgba(15,23,42,.05);
+    background:rgba(255,255,255,.70);
 }
 
 .js-plotly-plot,
@@ -274,72 +238,38 @@ svg.main-svg {
     box-shadow:none !important;
 }
 
-/* ===== FLOATING PDF ===== */
-
-.floating-pdf {
-    position: fixed !important;
-    top: 110px !important;
-    right: 28px !important;
-    z-index: 999999 !important;
+/* EXPORT PANEL */
+.export-panel {
+    padding:10px 12px;
+    border-radius:20px;
+    background:rgba(255,255,255,.42);
+    border:1px solid rgba(255,255,255,.62);
+    box-shadow:0 14px 38px rgba(15,23,42,.04);
+    backdrop-filter:blur(22px);
+    margin-top:6px;
 }
 
-.floating-pdf .stDownloadButton {
-    width: auto !important;
+.hash-caption {
+    margin-top:6px;
+    font-size:.70rem;
+    color:#64748B;
+    word-break:break-all;
 }
 
-.floating-pdf .stDownloadButton button {
-    width: 82px !important;
-    height: 52px !important;
-    min-height: 52px !important;
-    padding: 0 !important;
-
-    border-radius: 18px !important;
-
-    background:
-        linear-gradient(135deg,#4F46E5,#06B6D4,#10B981) !important;
-
-    color: transparent !important;
-
-    border: 1px solid rgba(255,255,255,.28) !important;
-
-    box-shadow:
-        0 18px 46px rgba(79,70,229,.30),
-        inset 0 1px 0 rgba(255,255,255,.22) !important;
-
-    position: relative !important;
-}
-
-.floating-pdf .stDownloadButton button::before {
-    content: "📄 PDF";
-    position: absolute;
-    inset: 0;
-
-    display:flex;
-    align-items:center;
-    justify-content:center;
-
-    font-size: 13px;
-    font-weight: 950;
-    letter-spacing: .04em;
-
-    color: white;
-}
-
-/* ===== RESPONSIVE ===== */
-
+/* RESPONSIVE */
 @media (max-width: 1100px) {
     .block-container {
         padding: 1rem 1.3rem 5rem 1.3rem !important;
     }
 
-    .executive-grid {
-        grid-template-columns: repeat(2, minmax(180px, 1fr)) !important;
+    .metric-compact-grid {
+        grid-template-columns: repeat(2, minmax(180px, 1fr));
     }
 }
 
 @media (max-width: 700px) {
-    .executive-grid {
-        grid-template-columns: 1fr !important;
+    .metric-compact-grid {
+        grid-template-columns: 1fr;
     }
 
     div[data-testid="stSegmentedControl"] > div {
@@ -347,33 +277,6 @@ svg.main-svg {
         flex-wrap: wrap !important;
     }
 }
-
-
-.standards-badge {
-    display:inline-flex;
-    align-items:center;
-    gap:8px;
-
-    margin-top:4px;
-    margin-bottom:20px;
-
-    padding:8px 14px;
-
-    border-radius:999px;
-
-    background:rgba(255,255,255,.56);
-
-    border:1px solid rgba(255,255,255,.65);
-
-    box-shadow:0 10px 30px rgba(15,23,42,.05);
-
-    font-size:.76rem;
-    font-weight:800;
-    color:#64748B;
-
-    backdrop-filter:blur(18px);
-}
-
 </style>
 """, unsafe_allow_html=True)
 
@@ -384,6 +287,24 @@ def estado_servicio(uptime, fallos, latencia):
     if uptime >= 95 and latencia < 3000:
         return "DEGRADADO"
     return "CRITICO"
+
+
+def dataframe_sha256(df_in: pd.DataFrame) -> str:
+    df_hash = df_in.copy()
+    for col in ["timestamp", "url"]:
+        if col not in df_hash.columns:
+            df_hash[col] = ""
+    payload = (
+        df_hash.sort_values(by=["timestamp", "url"], ascending=[True, True])
+        .astype(str)
+        .to_csv(index=False)
+        .encode("utf-8")
+    )
+    return hashlib.sha256(payload).hexdigest()
+
+
+def bytes_sha256(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
 
 
 class ReporteForensePDF(FPDF):
@@ -415,25 +336,10 @@ class ReporteForensePDF(FPDF):
         self.set_text_color(100, 116, 139)
         self.cell(0, 8, f"Aurora desarrollado por jaimesilva.co | Pagina {self.page_no()}", 0, 0, "C")
 
-AURORA_VERSION = "1.0.0"
 
-
-def dataframe_sha256(df_in: pd.DataFrame) -> str:
-    payload = (
-        df_in.sort_values(by=["timestamp", "url"], ascending=[True, True])
-        .astype(str)
-        .to_csv(index=False)
-        .encode("utf-8")
-    )
-    return hashlib.sha256(payload).hexdigest()
-
-
-def bytes_sha256(data: bytes) -> str:
-    return hashlib.sha256(data).hexdigest()
-    
 def generar_pdf_bytes(df_operacion):
     df_pdf = df_operacion.copy()
-    
+
     report_id = f"AUR-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:8].upper()}"
     source_hash = dataframe_sha256(df_pdf)
 
@@ -503,8 +409,6 @@ def generar_pdf_bytes(df_operacion):
     )
     pdf.ln(3)
 
-    pdf.set_fill_color(238, 244, 255)
-    pdf.set_draw_color(209, 213, 219)
     pdf.set_text_color(15, 23, 42)
     pdf.set_font("Arial", "B", 11)
     pdf.cell(0, 8, "1. Resumen ejecutivo", 0, 1)
@@ -707,34 +611,44 @@ def classify_latency(ms: float) -> str:
     return "Crítica"
 
 
-top_left, top_right = st.columns([6, 1])
-
-with top_left:
-    st.markdown("""
-    <div class="topbar">
-      <div class="brand-wrap">
-        <div class="brand-logo">
-          <svg width="42" height="42" viewBox="0 0 64 64" fill="none">
-            <defs>
-              <linearGradient id="g" x1="8" y1="8" x2="56" y2="56">
-                <stop offset="0%" stop-color="#4F46E5"/>
-                <stop offset="55%" stop-color="#06B6D4"/>
-                <stop offset="100%" stop-color="#10B981"/>
-              </linearGradient>
-            </defs>
-            <rect x="6" y="6" width="52" height="52" rx="16" fill="url(#g)"/>
-            <path d="M18 39C23 22 41 22 46 39" stroke="white" stroke-width="5" stroke-linecap="round"/>
-            <circle cx="32" cy="32" r="5" fill="white"/>
-          </svg>
-        </div>
-        <div class="brand-text">Aurora</div>
-        <div class="brand-badge">LIVE MONITORING</div>
-      </div>
+st.markdown("""
+<div class="topbar">
+  <div class="brand-wrap">
+    <div class="brand-logo">
+      <svg width="42" height="42" viewBox="0 0 64 64" fill="none">
+        <defs>
+          <linearGradient id="g" x1="8" y1="8" x2="56" y2="56">
+            <stop offset="0%" stop-color="#4F46E5"/>
+            <stop offset="55%" stop-color="#06B6D4"/>
+            <stop offset="100%" stop-color="#10B981"/>
+          </linearGradient>
+        </defs>
+        <rect x="6" y="6" width="52" height="52" rx="16" fill="url(#g)"/>
+        <path d="M18 39C23 22 41 22 46 39" stroke="white" stroke-width="5" stroke-linecap="round"/>
+        <circle cx="32" cy="32" r="5" fill="white"/>
+      </svg>
     </div>
+    <div class="brand-text">Aurora</div>
+    <div class="brand-badge">LIVE MONITORING</div>
     <div class="standards-badge">ISO/IEC 27037 · NIST SP 800-92 aligned</div>
-    """, unsafe_allow_html=True)
+  </div>
+</div>
+""", unsafe_allow_html=True)
 
-with top_right:
+
+df = load_data()
+
+if df.empty:
+    st.warning("Aún no hay suficientes datos en la bóveda forense.")
+    st.stop()
+
+pdf_bytes = generar_pdf_bytes(df)
+pdf_hash = bytes_sha256(pdf_bytes)
+
+export_left, export_right = st.columns([5.8, 1])
+
+with export_right:
+    st.markdown('<div class="export-panel">', unsafe_allow_html=True)
     st.download_button(
         label="📄 PDF",
         data=pdf_bytes,
@@ -744,19 +658,8 @@ with top_right:
         help="Exportar informe a PDF",
         use_container_width=True,
     )
-    st.caption(f"SHA-256: `{pdf_hash[:12]}...`")
-
-st.markdown("""
-<div class="standards-badge">
-ISO/IEC 27037 · NIST SP 800-92 aligned
-</div>
-""", unsafe_allow_html=True)
-
-df = load_data()
-
-if df.empty:
-    st.warning("Aún no hay suficientes datos en la bóveda forense.")
-    st.stop()
+    st.markdown(f'<div class="hash-caption">SHA-256 PDF: {pdf_hash[:16]}...</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 endpoints_disponibles = sorted(df["url"].dropna().unique().tolist())
 
@@ -844,70 +747,66 @@ df_servicios["health_score"] = (
     + (100 - (df_servicios["latencia_promedio"].clip(0, 5000) / 5000 * 100)) * 0.3
 ).clip(0, 100)
 
-pdf_bytes = generar_pdf_bytes(df)
-pdf_hash = bytes_sha256(pdf_bytes)
-
-
 servicio_mas_caido = df_servicios.sort_values("uptime").iloc[0]
 servicio_mas_lento = df_servicios.sort_values("latencia_promedio", ascending=False).iloc[0]
 servicio_mas_saludable = df_servicios.sort_values("health_score", ascending=False).iloc[0]
 servicio_mas_evidencia = df_servicios.sort_values("evidencia", ascending=False).iloc[0]
-
-
 
 if section == "Resumen Ejecutivo":
     st.markdown('<div class="section-title">Gobierno Ejecutivo de Disponibilidad</div>', unsafe_allow_html=True)
     st.markdown('<div class="section-subtitle">Vista consolidada para entender disponibilidad, criticidad, evidencia y salud operativa.</div>', unsafe_allow_html=True)
 
     st.markdown(f"""
-<div class="executive-grid">
-<div class="metric-card" title="Porcentaje de verificaciones exitosas dentro del periodo analizado. Excluye errores HTTP, DNS, TLS y errores registrados.">
-<div class="metric-icon">🟢</div><div class="metric-label">Disponibilidad</div>
-<div class="metric-value">{uptime_porcentaje:.2f}%</div>
-<div class="metric-note">Ventana: {ventana_inicio.strftime('%Y-%m-%d %H:%M')} → {ventana_fin.strftime('%Y-%m-%d %H:%M')} UTC</div>
-</div>
-<div class="metric-card" title="Eventos clasificados como error HTTP, DNS, TLS, timeout, caída o degradación funcional.">
-<div class="metric-icon">🚨</div><div class="metric-label">Incidentes</div>
-<div class="metric-value">{total_fallos}</div>
-<div class="metric-note">Fallos sobre {total_checks} verificaciones registradas.</div>
-</div>
-<div class="metric-card" title="Tiempo promedio de respuesta. Sobre 3000 ms indica degradación crítica.">
-<div class="metric-icon">⚡</div><div class="metric-label">Latencia promedio</div>
-<div class="metric-value">{latencia_promedio:.0f} ms</div>
-<div class="metric-note">Estado: {classify_latency(latencia_promedio)}. &lt;1000 sano · 1000-3000 degradado · &gt;3000 crítico.</div>
-</div>
-<div class="metric-card" title="Número total de observaciones técnicas registradas.">
-<div class="metric-icon">📡</div><div class="metric-label">Muestras</div>
-<div class="metric-value">{total_checks}</div>
-<div class="metric-note">Registros acumulados en la bóveda técnica.</div>
-</div>
-</div>
-""", unsafe_allow_html=True)
+<div class="metric-compact-grid">
 
-    st.markdown('<div class="section-title">Diagnóstico Operacional</div>', unsafe_allow_html=True)
+<div class="metric-compact">
+  <div class="metric-compact-label">Disponibilidad</div>
+  <div class="metric-compact-value">{uptime_porcentaje:.2f}%</div>
+  <div class="metric-compact-note">Ventana: {ventana_inicio.strftime('%Y-%m-%d %H:%M')} → {ventana_fin.strftime('%Y-%m-%d %H:%M')} UTC</div>
+</div>
 
-    st.markdown(f"""
-<div class="executive-grid">
-<div class="metric-card" title="Servicio con menor disponibilidad registrada.">
-<div class="metric-icon">🔴</div><div class="metric-label">Servicio más caído</div>
-<div class="metric-value">{servicio_mas_caido['uptime']:.1f}%</div>
-<div class="metric-note">{short_url(servicio_mas_caido['url'])}</div>
+<div class="metric-compact">
+  <div class="metric-compact-label">Incidentes</div>
+  <div class="metric-compact-value">{total_fallos}</div>
+  <div class="metric-compact-note">Sobre {total_checks} verificaciones</div>
 </div>
-<div class="metric-card" title="Servicio con mayor latencia promedio.">
-<div class="metric-icon">🐢</div><div class="metric-label">Servicio más lento</div>
-<div class="metric-value">{servicio_mas_lento['latencia_promedio']:.0f} ms</div>
-<div class="metric-note">{short_url(servicio_mas_lento['url'])}</div>
+
+<div class="metric-compact">
+  <div class="metric-compact-label">Latencia promedio</div>
+  <div class="metric-compact-value">{latencia_promedio:.0f} ms</div>
+  <div class="metric-compact-note">Estado: {classify_latency(latencia_promedio)}</div>
 </div>
-<div class="metric-card" title="Servicio con mejor combinación de disponibilidad y latencia.">
-<div class="metric-icon">✅</div><div class="metric-label">Mejor salud</div>
-<div class="metric-value">{servicio_mas_saludable['health_score']:.0f}/100</div>
-<div class="metric-note">{short_url(servicio_mas_saludable['url'])}</div>
+
+<div class="metric-compact">
+  <div class="metric-compact-label">Muestras</div>
+  <div class="metric-compact-value">{total_checks}</div>
+  <div class="metric-compact-note">Registros analizados</div>
 </div>
-<div class="metric-card" title="Servicio con mayor volumen de evidencia forense asociada.">
-<div class="metric-icon">🧾</div><div class="metric-label">Mayor evidencia</div>
-<div class="metric-value">{int(servicio_mas_evidencia['evidencia'])}</div>
-<div class="metric-note">{short_url(servicio_mas_evidencia['url'])}</div>
+
+<div class="metric-compact">
+  <div class="metric-compact-label">Servicio más caído</div>
+  <div class="metric-compact-value">{servicio_mas_caido['uptime']:.1f}%</div>
+  <div class="metric-compact-note">{short_url(servicio_mas_caido['url'])}</div>
 </div>
+
+<div class="metric-compact">
+  <div class="metric-compact-label">Servicio más lento</div>
+  <div class="metric-compact-value">{servicio_mas_lento['latencia_promedio']:.0f} ms</div>
+  <div class="metric-compact-note">{short_url(servicio_mas_lento['url'])}</div>
+</div>
+
+<div class="metric-compact">
+  <div class="metric-compact-label">Mejor salud</div>
+  <div class="metric-compact-value">{servicio_mas_saludable['health_score']:.0f}/100</div>
+  <div class="metric-compact-note">{short_url(servicio_mas_saludable['url'])}</div>
+</div>
+
+<div class="metric-compact">
+  <div class="metric-compact-label">Mayor evidencia</div>
+  <div class="metric-compact-value">{int(servicio_mas_evidencia['evidencia'])}</div>
+  <div class="metric-compact-note">{short_url(servicio_mas_evidencia['url'])}</div>
+</div>
+
 </div>
 """, unsafe_allow_html=True)
 
@@ -972,7 +871,13 @@ elif section == "Incidentes":
         df_fallos_view["url"] = df_fallos_view["url"].apply(lambda x: short_url(x, 70))
         df_fallos_view["http_code"] = df_fallos_view["http_code"].apply(lambda x: "DNS/TLS" if pd.isna(x) else str(int(x)))
         df_fallos_view["latency_ms"] = df_fallos_view["latency_ms"].astype(int).astype(str) + " ms"
-        df_fallos_view = df_fallos_view.rename(columns={"timestamp": "Fecha", "url": "Servicio", "http_code": "Código", "latency_ms": "Latencia", "error_type": "Evento"})
+        df_fallos_view = df_fallos_view.rename(columns={
+            "timestamp": "Fecha",
+            "url": "Servicio",
+            "http_code": "Código",
+            "latency_ms": "Latencia",
+            "error_type": "Evento"
+        })
         st.dataframe(df_fallos_view, use_container_width=True, hide_index=True, height=560)
 
 elif section == "Evidencia Forense":
