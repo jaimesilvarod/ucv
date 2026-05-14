@@ -7,12 +7,51 @@ from fpdf import FPDF
 import hashlib
 import uuid
 import tempfile
+from PIL import Image, ImageDraw
+from pathlib import Path
 
 AURORA_VERSION = "1.0.0"
 
+ASSETS_DIR = Path("assets")
+ASSETS_DIR.mkdir(exist_ok=True)
+
+AURORA_LOGO_PATH = ASSETS_DIR / "aurora-logo.png"
+AURORA_ICON_PATH = ASSETS_DIR / "aurora-icon.png"
+
+
+def ensure_aurora_assets():
+    if AURORA_ICON_PATH.exists() and AURORA_LOGO_PATH.exists():
+        return
+
+    size = 256
+    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+
+    # fondo aurora
+    for i in range(size):
+        r = int(79 + (6 - 79) * i / size)
+        g = int(70 + (182 - 70) * i / size)
+        b = int(229 + (212 - 229) * i / size)
+        draw.line([(i, 0), (i, size)], fill=(r, g, b, 255))
+
+    draw.rounded_rectangle((18, 18, 238, 238), radius=58, outline=(255, 255, 255, 90), width=3)
+
+    # arco Aurora
+    draw.arc((62, 80, 194, 198), start=205, end=335, fill=(255, 255, 255, 255), width=18)
+    draw.ellipse((112, 112, 144, 144), fill=(255, 255, 255, 255))
+
+    img.save(AURORA_ICON_PATH)
+
+    logo = Image.new("RGBA", (720, 220), (0, 0, 0, 0))
+    logo.paste(img.resize((140, 140)), (20, 40))
+    logo.save(AURORA_LOGO_PATH)
+
+
+ensure_aurora_assets()
+
 st.set_page_config(
     page_title="Aurora",
-    page_icon="🌌",
+    page_icon=str(AURORA_ICON_PATH),
     layout="wide",
     initial_sidebar_state="collapsed",
     menu_items={}
@@ -309,32 +348,35 @@ def bytes_sha256(data: bytes) -> str:
 
 class ReporteForensePDF(FPDF):
     def header(self):
-        self.set_fill_color(15, 23, 42)
-        self.rect(0, 0, 210, 30, "F")
+        self.set_fill_color(11, 18, 32)
+        self.rect(0, 0, 210, 34, "F")
 
-        self.set_fill_color(79, 70, 229)
-        self.rect(10, 7, 16, 16, "F")
+        self.image(str(AURORA_ICON_PATH), 12, 8, 18, 18)
 
         self.set_text_color(255, 255, 255)
-        self.set_font("Arial", "B", 16)
-        self.set_xy(31, 7)
+        self.set_font("Helvetica", "B", 17)
+        self.set_xy(36, 8)
         self.cell(0, 8, "Aurora", 0, 1)
 
-        self.set_font("Arial", "", 8)
-        self.set_x(31)
-        self.cell(0, 5, "Observabilidad tecnica | jaimesilva.co", 0, 1)
+        self.set_font("Helvetica", "", 8.5)
+        self.set_x(36)
+        self.cell(0, 5, "Observabilidad tecnica verificable | jaimesilva.co", 0, 1)
+
+        self.set_draw_color(79, 70, 229)
+        self.set_line_width(1.2)
+        self.line(12, 31, 198, 31)
 
         self.set_text_color(15, 23, 42)
-        self.ln(12)
+        self.ln(16)
 
     def footer(self):
         self.set_y(-18)
         self.set_draw_color(220, 226, 235)
         self.line(10, self.get_y(), 200, self.get_y())
         self.set_y(-14)
-        self.set_font("Arial", "I", 7)
+        self.set_font("Helvetica", "I", 7)
         self.set_text_color(100, 116, 139)
-        self.cell(0, 8, f"Aurora desarrollado por jaimesilva.co | Pagina {self.page_no()}", 0, 0, "C")
+        self.cell(0, 8, f"Aurora | jaimesilva.co | Pagina {self.page_no()}", 0, 0, "C")
 
 
 def generar_pdf_bytes(df_operacion):
@@ -534,6 +576,25 @@ def generar_pdf_bytes(df_operacion):
         "Desarrollado por jaimesilva.co. "
         "Este reporte no sustituye peritaje judicial, pero preserva una relacion tecnica ordenada, "
         "cronologica y verificable de los eventos registrados por la herramienta."
+    )
+
+    pdf.ln(6)
+    pdf.set_fill_color(241, 245, 249)
+    pdf.set_draw_color(79, 70, 229)
+    pdf.rect(18, pdf.get_y(), 174, 28, "DF")
+
+    pdf.set_xy(24, pdf.get_y() + 5)
+    pdf.set_font("Helvetica", "B", 10)
+    pdf.set_text_color(15, 23, 42)
+    pdf.cell(0, 5, "SELLO TECNICO AURORA", 0, 1)
+
+    pdf.set_x(24)
+    pdf.set_font("Helvetica", "", 8)
+    pdf.multi_cell(
+        160,
+        4,
+        f"Informe generado por Aurora v{AURORA_VERSION} | jaimesilva.co | "
+        f"Hash SHA-256 de datos fuente: {source_hash[:32]}..."
     )
 
     pdf.ln(8)
