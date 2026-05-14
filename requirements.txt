@@ -5,3 +5,6 @@ plotly
 fpdf2
 pillow
 pyhanko
+reportlab
+qrcode
+pillow
