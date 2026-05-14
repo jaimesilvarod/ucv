@@ -17,7 +17,8 @@ ENDPOINTS = [
     "https://trilce.ucv.edu.pe",
     "https://campusalumno.azurewebsites.net/plan-estudio/",
     "https://ucvapi.azure-api.net/auth-trilceprincipal/pr/api/Principal/ObtenerPersona?showSpinner=false",
-    "https://ucv.blackboard.com"
+    "https://ucv.blackboard.com",
+    "https://ucv.edu.pe"
 ]
 
 def check_ssl(hostname):
