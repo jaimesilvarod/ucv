@@ -201,6 +201,25 @@ footer {
 .block-container {
     padding-top: 1.2rem !important;
 }
+
+div[data-testid="column"] .stButton button {
+    min-height: 42px !important;
+}
+
+/* Navegación superior */
+div[data-testid="column"] .stButton button:has(p) {
+    background: rgba(255,255,255,.58) !important;
+    color: #334155 !important;
+    border: 1px solid rgba(15,23,42,.08) !important;
+    box-shadow: 0 8px 22px rgba(15,23,42,.04) !important;
+}
+
+/* Hover navegación */
+div[data-testid="column"] .stButton button:has(p):hover {
+    transform: translateY(-1px);
+    background: rgba(255,255,255,.82) !important;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -448,13 +467,25 @@ with top3:
         mime="application/pdf",
     )
 
-section = st.segmented_control(
-    "Vista",
-    ["Resumen Ejecutivo", "Latencia", "Incidentes", "Evidencia Forense"],
-    default=st.session_state.section,
-    key="section",
-    label_visibility="collapsed",
-)
+nav1, nav2, nav3, nav4 = st.columns([1, 1, 1, 1])
+
+with nav1:
+    if st.button("Resumen Ejecutivo", key="nav_resumen"):
+        st.session_state.section = "Resumen Ejecutivo"
+
+with nav2:
+    if st.button("Latencia", key="nav_latencia"):
+        st.session_state.section = "Latencia"
+
+with nav3:
+    if st.button("Incidentes", key="nav_incidentes"):
+        st.session_state.section = "Incidentes"
+
+with nav4:
+    if st.button("Evidencia Forense", key="nav_evidencia"):
+        st.session_state.section = "Evidencia Forense"
+
+section = st.session_state.section
 
 servicio_mas_caido = df_servicios.sort_values("uptime").iloc[0]
 servicio_mas_lento = df_servicios.sort_values("latencia_promedio", ascending=False).iloc[0]
