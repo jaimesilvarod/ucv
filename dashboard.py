@@ -255,6 +255,79 @@ div[data-testid="stSegmentedControl"] label[data-baseweb="radio"]:has(input:chec
         inset 0 1px 0 rgba(255,255,255,.25) !important;
 }
 
+.hero-panel {
+    position: relative;
+    padding: 28px 32px;
+    margin: 10px 0 22px 0;
+    border-radius: 30px;
+    background:
+        linear-gradient(135deg, rgba(255,255,255,.82), rgba(255,255,255,.52)),
+        radial-gradient(circle at 12% 18%, rgba(79,70,229,.18), transparent 30%),
+        radial-gradient(circle at 88% 20%, rgba(6,182,212,.18), transparent 32%);
+    border: 1px solid rgba(255,255,255,.62);
+    box-shadow:
+        0 24px 80px rgba(15,23,42,.08),
+        inset 0 1px 0 rgba(255,255,255,.75);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    overflow: hidden;
+}
+
+.hero-title {
+    font-size: 2.2rem;
+    font-weight: 950;
+    letter-spacing: -.07em;
+    color: #0F172A;
+    margin-bottom: 8px;
+}
+
+.hero-subtitle {
+    font-size: 1rem;
+    color: #64748B;
+    max-width: 860px;
+    line-height: 1.55;
+}
+
+.hero-status-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-top: 18px;
+    flex-wrap: wrap;
+}
+
+.status-pill {
+    padding: 9px 15px;
+    border-radius: 999px;
+    font-size: .78rem;
+    font-weight: 900;
+    letter-spacing: .06em;
+}
+
+.status-ok {
+    color: #047857;
+    background: rgba(16,185,129,.13);
+}
+
+.status-warn {
+    color: #B45309;
+    background: rgba(245,158,11,.16);
+}
+
+.status-critical {
+    color: #B91C1C;
+    background: rgba(239,68,68,.14);
+}
+
+.hero-meta {
+    padding: 9px 15px;
+    border-radius: 999px;
+    background: rgba(15,23,42,.06);
+    color: #475569;
+    font-size: .78rem;
+    font-weight: 800;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -539,6 +612,36 @@ servicio_mas_caido = df_servicios.sort_values("uptime").iloc[0]
 servicio_mas_lento = df_servicios.sort_values("latencia_promedio", ascending=False).iloc[0]
 servicio_mas_saludable = df_servicios.sort_values("health_score", ascending=False).iloc[0]
 servicio_mas_evidencia = df_servicios.sort_values("evidencia", ascending=False).iloc[0]
+
+if uptime_porcentaje >= 99 and total_fallos == 0:
+    estado_global = "OPERATIVO"
+    estado_class = "status-ok"
+    estado_texto = "La operación se mantiene estable, sin incidentes críticos en la ventana seleccionada."
+elif uptime_porcentaje >= 95:
+    estado_global = "DEGRADADO"
+    estado_class = "status-warn"
+    estado_texto = "Se detectan señales de degradación o incidentes aislados que requieren seguimiento."
+else:
+    estado_global = "CRÍTICO"
+    estado_class = "status-critical"
+    estado_texto = "La disponibilidad evidencia afectación relevante y riesgo operativo verificable."
+
+st.markdown(f"""
+<div class="hero-panel">
+    <div class="hero-title">Centro de Control Aurora</div>
+    <div class="hero-subtitle">
+        {estado_texto} La vista consolida disponibilidad, latencia, incidentes y evidencia técnica
+        para trazabilidad operacional y soporte probatorio.
+    </div>
+    <div class="hero-status-row">
+        <div class="status-pill {estado_class}">{estado_global}</div>
+        <div class="hero-meta">{uptime_porcentaje:.2f}% disponibilidad</div>
+        <div class="hero-meta">{total_fallos} incidentes</div>
+        <div class="hero-meta">{total_checks} verificaciones</div>
+        <div class="hero-meta">{latencia_promedio:.0f} ms promedio</div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 if section == "Resumen Ejecutivo":
     st.markdown('<div class="section-title">Gobierno Ejecutivo de Disponibilidad</div>', unsafe_allow_html=True)
