@@ -17,117 +17,184 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-/* App base */
+
+/* ===== BASE ===== */
+
 .stApp {
     background:
-        radial-gradient(circle at top left, rgba(37, 99, 235, 0.18), transparent 32%),
-        radial-gradient(circle at top right, rgba(225, 29, 72, 0.14), transparent 28%),
-        linear-gradient(180deg, #0B1020 0%, #0F172A 100%);
-    color: #F8FAFC;
+        radial-gradient(circle at top right, rgba(37,99,235,0.08), transparent 30%),
+        linear-gradient(180deg, #F4F7FB 0%, #EEF2FF 100%);
+    color: #0F172A;
 }
 
-/* Sidebar */
+/* ===== SIDEBAR ===== */
+
 [data-testid="stSidebar"] {
-    background: rgba(15, 23, 42, 0.92);
-    border-right: 1px solid rgba(148, 163, 184, 0.16);
+    background: rgba(255,255,255,0.88);
+    backdrop-filter: blur(18px);
+    border-right: 1px solid rgba(15,23,42,0.06);
 }
 
-/* Main width */
+[data-testid="stSidebar"] * {
+    color: #0F172A !important;
+}
+
+/* ===== MAIN ===== */
+
 .block-container {
-    padding-top: 3rem;
-    padding-bottom: 3rem;
     max-width: 1500px;
+    padding-top: 2rem;
+    padding-bottom: 3rem;
 }
 
-/* Titles */
-h1, h2, h3 {
-    letter-spacing: -0.04em;
-}
+/* ===== HERO ===== */
 
-/* KPI cards */
-[data-testid="stMetric"] {
-    background: linear-gradient(145deg, rgba(17, 24, 39, 0.96), rgba(30, 41, 59, 0.88));
-    border: 1px solid rgba(148, 163, 184, 0.18);
-    border-radius: 22px;
-    padding: 22px;
-    box-shadow: 0 18px 45px rgba(0,0,0,0.35);
-}
-
-[data-testid="stMetricLabel"] {
-    color: #94A3B8;
-    font-size: 0.9rem;
-}
-
-[data-testid="stMetricValue"] {
-    color: #F8FAFC;
-    font-size: 2rem;
-    font-weight: 800;
-}
-
-/* Tabs */
-button[data-baseweb="tab"] {
-    background: rgba(15, 23, 42, 0.75);
-    border-radius: 14px;
-    margin-right: 8px;
-    padding: 10px 18px;
-    border: 1px solid rgba(148, 163, 184, 0.14);
-}
-
-button[data-baseweb="tab"][aria-selected="true"] {
-    background: linear-gradient(135deg, #E11D48, #2563EB);
-    color: white;
-}
-
-/* Dataframes */
-[data-testid="stDataFrame"] {
-    border-radius: 18px;
-    overflow: hidden;
-    border: 1px solid rgba(148, 163, 184, 0.18);
-}
-
-/* Buttons */
-.stButton > button, .stDownloadButton > button {
-    border-radius: 14px;
-    border: 1px solid rgba(148, 163, 184, 0.25);
-    background: linear-gradient(135deg, #2563EB, #E11D48);
-    color: white;
-    font-weight: 700;
-    padding: 0.7rem 1rem;
-}
-
-/* Premium header card */
 .hero-card {
-    padding: 30px 34px;
-    border-radius: 28px;
-    background: linear-gradient(135deg, rgba(15,23,42,0.96), rgba(30,41,59,0.86));
-    border: 1px solid rgba(148,163,184,0.18);
-    box-shadow: 0 24px 70px rgba(0,0,0,0.38);
-    margin-bottom: 26px;
+    padding: 42px;
+    border-radius: 30px;
+    background:
+        linear-gradient(135deg, rgba(255,255,255,0.95), rgba(248,250,252,0.92));
+    border: 1px solid rgba(15,23,42,0.06);
+    box-shadow:
+        0 10px 40px rgba(15,23,42,0.06),
+        0 2px 8px rgba(15,23,42,0.04);
+    margin-bottom: 28px;
+}
+
+.hero-pill {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 999px;
+    background: rgba(37,99,235,0.08);
+    color: #2563EB;
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-bottom: 20px;
 }
 
 .hero-title {
-    font-size: 2.8rem;
+    font-size: 3.2rem;
+    line-height: 1;
     font-weight: 900;
-    letter-spacing: -0.06em;
-    margin-bottom: 6px;
+    letter-spacing: -0.07em;
+    color: #0F172A;
+    margin-bottom: 14px;
 }
 
 .hero-subtitle {
-    color: #CBD5E1;
     font-size: 1.05rem;
+    color: #475569;
+    max-width: 850px;
+    line-height: 1.6;
 }
 
-.status-pill {
-    display: inline-block;
-    padding: 6px 12px;
-    border-radius: 999px;
-    background: rgba(225, 29, 72, 0.16);
-    color: #FDA4AF;
-    border: 1px solid rgba(225, 29, 72, 0.35);
-    font-weight: 700;
-    font-size: 0.85rem;
-    margin-bottom: 14px;
+/* ===== KPI CARDS ===== */
+
+[data-testid="stMetric"] {
+    background: rgba(255,255,255,0.82);
+    backdrop-filter: blur(14px);
+    border-radius: 24px;
+    padding: 22px;
+    border: 1px solid rgba(15,23,42,0.05);
+    box-shadow:
+        0 4px 20px rgba(15,23,42,0.04);
 }
+
+/* ELIMINA cajas externas */
+[data-testid="stVerticalBlock"] > div:has([data-testid="stMetric"]) {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+}
+
+[data-testid="stMetricLabel"] {
+    color: #64748B;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+[data-testid="stMetricValue"] {
+    color: #0F172A;
+    font-size: 2.4rem;
+    font-weight: 800;
+    letter-spacing: -0.05em;
+}
+
+/* ===== TABS ===== */
+
+button[data-baseweb="tab"] {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    color: #64748B;
+    font-weight: 600;
+    padding: 14px 8px;
+    margin-right: 24px;
+}
+
+button[data-baseweb="tab"]:hover {
+    color: #0F172A;
+}
+
+button[data-baseweb="tab"][aria-selected="true"] {
+    color: #2563EB;
+    border-bottom: 2px solid #2563EB;
+    background: transparent;
+}
+
+/* ===== BUTTONS ===== */
+
+.stButton > button,
+.stDownloadButton > button {
+    border-radius: 14px;
+    border: none;
+    background: linear-gradient(135deg,#2563EB,#4F46E5);
+    color: white;
+    font-weight: 700;
+    padding: 0.75rem 1rem;
+    box-shadow: 0 8px 24px rgba(37,99,235,0.22);
+}
+
+.stButton > button:hover,
+.stDownloadButton > button:hover {
+    transform: translateY(-1px);
+}
+
+/* ===== DATAFRAMES ===== */
+
+[data-testid="stDataFrame"] {
+    border-radius: 22px;
+    overflow: hidden;
+    border: 1px solid rgba(15,23,42,0.06);
+    box-shadow:
+        0 8px 24px rgba(15,23,42,0.04);
+}
+
+/* ===== PLOTLY ===== */
+
+.js-plotly-plot {
+    border-radius: 24px;
+    background: rgba(255,255,255,0.78);
+    padding: 10px;
+    border: 1px solid rgba(15,23,42,0.05);
+}
+
+/* ===== TYPOGRAPHY ===== */
+
+html, body, [class*="css"] {
+    font-family:
+        Inter,
+        ui-sans-serif,
+        system-ui,
+        sans-serif;
+}
+
+h1,h2,h3 {
+    letter-spacing: -0.05em;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -209,10 +276,17 @@ def load_data():
 # 4. INTERFAZ PRINCIPAL
 st.markdown("""
 <div class="hero-card">
-    <div class="status-pill">MONITOREO FORENSE ACTIVO</div>
-    <div class="hero-title">Panel de Auditoría de Infraestructura Web</div>
+    <div class="hero-pill">
+        MONITOREO FORENSE ACTIVO
+    </div>
+
+    <div class="hero-title">
+        Panel de Auditoría de Infraestructura Web
+    </div>
+
     <div class="hero-subtitle">
-        Observabilidad técnica de disponibilidad, latencia, certificados, errores HTTP, DNS y evidencia criptográfica.
+        Observabilidad avanzada de disponibilidad, latencia, DNS, certificados SSL,
+        integridad criptográfica y comportamiento operativo de plataformas académicas.
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -245,19 +319,15 @@ else:
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        with st.container(border=True):
             st.metric("Uptime General", f"{uptime_porcentaje:.2f}%")
             
     with col2:
-        with st.container(border=True):
             st.metric("Total de Muestras", total_checks)
             
     with col3:
-        with st.container(border=True):
             st.metric("Incidentes Registrados", total_fallos)
             
     with col4:
-        with st.container(border=True):
             st.metric("Latencia Promedio", f"{latencia_promedio:.0f} ms")
 
     st.markdown("---")
