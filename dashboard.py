@@ -75,29 +75,15 @@ def generar_pdf_bytes(df_fallos, uptime, total_incidentes):
 def aplicar_estilo_premium():
     st.markdown("""
         <style>
-        /* Ocultar elementos por defecto de Streamlit */
-        #MainMenu {visibility: hidden;}
+        /* Ocultar solo el footer que dice "Made with Streamlit" */
         footer {visibility: hidden;}
-        header {visibility: hidden;}
         
-        /* Estilo premium para las tarjetas de métricas (KPIs) */
+        /* Borde decorativo para las métricas (estilo Power BI) que funciona en Día/Noche */
         div[data-testid="metric-container"] {
-            background-color: #1E1E1E;
-            border: 1px solid #333333;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-            border-left: 5px solid #00C853; /* Borde verde estilo Power BI */
-        }
-        
-        /* Mejorar la tipografía de las métricas */
-        div[data-testid="metric-container"] label {
-            font-size: 1rem !important;
-            color: #A0A0A0 !important;
-        }
-        div[data-testid="metric-container"] div[data-testid="stMetricValue"] {
-            font-size: 2rem !important;
-            font-weight: 700 !important;
+            padding: 10px 15px;
+            border-left: 5px solid #00C853; /* Borde indicador verde */
+            border-radius: 4px;
+            background-color: rgba(128, 128, 128, 0.05); /* Fondo sutil adaptable */
         }
         </style>
         """, unsafe_allow_html=True)
