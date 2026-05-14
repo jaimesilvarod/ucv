@@ -557,7 +557,7 @@ if section == "Resumen Ejecutivo":
     df_health["latencia_promedio"] = df_health["latencia_promedio"].round(0)
     df_health["latencia_maxima"] = df_health["latencia_maxima"].round(0)
 
-    st.markdown(df.to_html(
+    st.dataframe(
         df_health[
             [
                 "url",
@@ -572,7 +572,7 @@ if section == "Resumen Ejecutivo":
         ],
         use_container_width=True,
         hide_index=True,
-    ), unsafe_allow_html=True)
+    )
 
 elif section == "Latencia":
     st.markdown('<div class="section-title">Evolución de Tiempos de Respuesta</div>', unsafe_allow_html=True)
@@ -662,12 +662,12 @@ elif section == "Incidentes":
             "error_type": "Evento"
         })
 
-        st.markdown(df.to_html(
+        st.dataframe(
             df_fallos_view,
             use_container_width=True,
             hide_index=True,
             height=520,
-        ), unsafe_allow_html=True)
+        )
 
 elif section == "Evidencia Forense":
     st.markdown(
@@ -701,9 +701,9 @@ elif section == "Evidencia Forense":
         "screenshot_url": "Evidencia"
     })
 
-    st.markdown(df.to_html(
+    st.dataframe(
         df_evidencia_view,
         use_container_width=True,
         hide_index=True,
         height=520,
-    ), unsafe_allow_html=True)
+    )
