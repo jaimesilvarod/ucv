@@ -39,39 +39,42 @@ st.markdown("""
     padding-bottom: 5rem;
 }
 
-.hero {
-    padding-top: 2rem;
-    padding-bottom: 2.5rem;
+.topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 8px;
+    padding-bottom: 28px;
 }
 
-.hero-pill {
-    display: inline-flex;
-    padding: 7px 14px;
-    border-radius: 999px;
-    background: rgba(79,70,229,0.10);
-    color: #4F46E5;
-    font-size: 0.78rem;
-    font-weight: 800;
-    margin-bottom: 24px;
+.brand-wrap {
+    display: flex;
+    align-items: center;
+    gap: 14px;
 }
 
-.hero-title {
-    font-size: 4rem;
-    line-height: 0.95;
+.brand-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.brand-text {
+    font-size: 2rem;
     font-weight: 950;
-    letter-spacing: -0.08em;
+    letter-spacing: -0.07em;
     color: #0F172A;
-    max-width: 980px;
 }
 
-.hero-subtitle {
-    margin-top: 22px;
-    font-size: 1.08rem;
-    line-height: 1.7;
-    color: #475569;
-    max-width: 860px;
+.brand-badge {
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(79,70,229,0.08);
+    color: #4F46E5;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: .08em;
 }
-
 .executive-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(180px, 1fr));
@@ -274,13 +277,43 @@ def classify_latency(ms: float) -> str:
 
 
 st.markdown("""
-<div class="hero">
-<div class="hero-pill">🛡️ MONITOREO FORENSE ACTIVO</div>
-<div class="hero-title">Infraestructura Web y Evidencia Operacional</div>
-<div class="hero-subtitle">
-Observabilidad avanzada de disponibilidad, latencia, DNS, certificados SSL,
-integridad criptográfica y comportamiento operativo de plataformas académicas.
+<div class="topbar">
+
+<div class="brand-wrap">
+
+<div class="brand-logo">
+<svg width="34" height="34" viewBox="0 0 64 64" fill="none">
+<defs>
+<linearGradient id="auroraGradient" x1="0" y1="0" x2="1" y2="1">
+<stop offset="0%" stop-color="#4F46E5"/>
+<stop offset="100%" stop-color="#06B6D4"/>
+</linearGradient>
+</defs>
+
+<circle cx="32" cy="32" r="30"
+fill="url(#auroraGradient)"
+opacity="0.15"/>
+
+<path d="M18 38C24 18 40 18 46 38"
+stroke="url(#auroraGradient)"
+stroke-width="5"
+stroke-linecap="round"/>
+
+<circle cx="32" cy="32" r="4"
+fill="#4F46E5"/>
+</svg>
 </div>
+
+<div class="brand-text">
+Aurora
+</div>
+
+<div class="brand-badge">
+LIVE MONITORING
+</div>
+
+</div>
+
 </div>
 """, unsafe_allow_html=True)
 
