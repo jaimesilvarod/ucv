@@ -3,6 +3,73 @@ from supabase import create_client
 import pandas as pd
 import plotly.express as px
 from datetime import datetime, timedelta
+from fpdf import FPDF
+import base64
+
+class ReporteForensePDF(FPDF):
+    def header(self):
+        self.set_font('Arial', 'B', 15)
+        self.cell(0, 10, 'REPORTE DE AUDITORIA FORENSE DE INFRAESTRUCTURA', 0, 1, 'C')
+        self.set_font('Arial', 'I', 10)
+        self.cell(0, 10, f'Generado el: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} UTC', 0, 1, 'C')
+        self.line(10, 30, 200, 30)
+        self.ln(10)
+
+    def footer(self):
+        self.set_y(-15)
+        self.set_font('Arial', 'I', 8)
+        self.cell(0, 10, f'Página {self.page_no()}', 0, 0, 'C')
+
+def generar_pdf_bytes(df_fallos, uptime, total_incidentes):
+    pdf = ReporteForensePDF()
+    pdf.add_page()
+    
+    # Resumen Ejecutivo
+    pdf.set_font('Arial', 'B', 12)
+    pdf.cell(0, 10, '1. RESUMEN EJECUTIVO', 0, 1)
+    pdf.set_font('Arial', '', 11)
+    pdf.multi_cell(0, 8, f"Durante el periodo analizado, la infraestructura presentó un Uptime global del {uptime:.2f}%. Se detectaron un total de {total_incidentes} incidentes críticos (Errores 400+, Timeouts o caídas de DNS).")
+    pdf.ln(5)
+    
+    # Tabla de Incidentes
+    pdf.set_font('Arial', 'B', 12)
+    pdf.cell(0, 10, '2. BITACORA DE INCIDENTES CRITICOS', 0, 1)
+    
+    pdf.set_font('Arial', 'B', 9)
+    # Cabeceras de tabla
+    pdf.cell(45, 8, 'Timestamp (UTC)', 1)
+    pdf.cell(75, 8, 'Endpoint', 1)
+    pdf.cell(20, 8, 'HTTP', 1)
+    pdf.cell(50, 8, 'Detalle', 1)
+    pdf.ln()
+    
+    pdf.set_font('Arial', '', 8)
+    for index, row in df_fallos.head(50).iterrows(): # Limitamos a los últimos 50 para el PDF
+        fecha_str = str(row['timestamp']).split('.')[0]
+        url_corta = str(row['url']).replace('https://', '')[:35] + "..." if len(str(row['url'])) > 35 else str(row['url']).replace('https://', '')
+        http_code = str(int(row['http_code'])) if pd.notna(row['http_code']) else "DNS/TLS"
+        error_type = str(row['error_type'])[:30]
+        
+        pdf.cell(45, 8, fecha_str, 1)
+        pdf.cell(75, 8, url_corta, 1)
+        pdf.cell(20, 8, http_code, 1)
+        pdf.cell(50, 8, error_type, 1)
+        pdf.ln()
+        
+    return pdf.output(dest='S').encode('latin1')
+
+# Añadir el botón de descarga en la barra lateral
+if not df_fallos.empty:
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("Exportar Evidencia")
+    pdf_bytes = generar_pdf_bytes(df_fallos, uptime_porcentaje, total_fallos)
+    
+    st.sidebar.download_button(
+        label="📥 Descargar Reporte PDF",
+        data=pdf_bytes,
+        file_name=f"Auditoria_UCV_{datetime.now().strftime('%Y%m%d')}.pdf",
+        mime="application/pdf"
+    )
 
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(
