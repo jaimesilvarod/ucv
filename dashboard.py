@@ -3,80 +3,129 @@ from supabase import create_client
 import pandas as pd
 import plotly.express as px
 from datetime import datetime, timezone
-from fpdf import FPDF
 import hashlib
 import uuid
 import tempfile
-from PIL import Image, ImageDraw
 from pathlib import Path
-from pyhanko.sign import signers
-from pyhanko.pdf_utils.incremental_writer import IncrementalPdfFileWriter
+from PIL import Image, ImageDraw
+
+from reportlab.lib import colors
+from reportlab.lib.enums import TA_LEFT, TA_CENTER
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import mm
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Paragraph,
+    Spacer,
+    Table,
+    TableStyle,
+    Image as RLImage,
+    PageBreak,
+    KeepTogether,
+)
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+
+import qrcode
 
 
-def firmar_pdf_pades(pdf_bytes: bytes, p12_path: str, password: str) -> bytes:
-    signer = signers.SimpleSigner.load_pkcs12(
-        pfx_file=p12_path,
-        passphrase=password.encode()
-    )
+AURORA_VERSION = "1.1.0"
+AUTHOR_WEB = "jaimesilva.co"
+VERIFY_BASE_URL = "https://aurora.jaimesilva.co/verify"
 
-    input_pdf = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
-    input_pdf.write(pdf_bytes)
-    input_pdf.close()
-
-    output_pdf = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
-    output_pdf.close()
-
-    with open(input_pdf.name, "rb") as inf:
-        writer = IncrementalPdfFileWriter(inf)
-        with open(output_pdf.name, "wb") as outf:
-            signers.sign_pdf(
-                writer,
-                signers.PdfSignatureMetadata(field_name="FirmaAurora"),
-                signer=signer,
-                output=outf,
-            )
-
-    with open(output_pdf.name, "rb") as f:
-        return f.read()
-
-AURORA_VERSION = "1.0.0"
+AURORA_DARK = "#0B1220"
+AURORA_PRIMARY = "#4F46E5"
+AURORA_CYAN = "#06B6D4"
+AURORA_GREEN = "#10B981"
+AURORA_RED = "#EF4444"
+AURORA_AMBER = "#F59E0B"
+AURORA_MUTED = "#64748B"
+AURORA_BORDER = "#E2E8F0"
+AURORA_SOFT = "#F8FAFC"
 
 ASSETS_DIR = Path("assets")
 ASSETS_DIR.mkdir(exist_ok=True)
 
-AURORA_LOGO_PATH = ASSETS_DIR / "aurora-logo.png"
+FONT_DIR = ASSETS_DIR / "fonts"
+FONT_DIR.mkdir(exist_ok=True)
+
 AURORA_ICON_PATH = ASSETS_DIR / "aurora-icon.png"
+APTOS_FONT_PATH = FONT_DIR / "Aptos.ttf"
+APTOS_BOLD_FONT_PATH = FONT_DIR / "Aptos-Bold.ttf"
 
 
 def ensure_aurora_assets():
-    if AURORA_ICON_PATH.exists() and AURORA_LOGO_PATH.exists():
+    if AURORA_ICON_PATH.exists():
         return
 
-    size = 256
+    size = 512
+    scale = size / 256
+
     img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
 
-    # fondo aurora
     for i in range(size):
         r = int(79 + (6 - 79) * i / size)
         g = int(70 + (182 - 70) * i / size)
         b = int(229 + (212 - 229) * i / size)
         draw.line([(i, 0), (i, size)], fill=(r, g, b, 255))
 
-    draw.rounded_rectangle((18, 18, 238, 238), radius=58, outline=(255, 255, 255, 90), width=3)
+    pad = int(18 * scale)
+    radius = int(58 * scale)
+    draw.rounded_rectangle(
+        (pad, pad, size - pad, size - pad),
+        radius=radius,
+        outline=(255, 255, 255, 95),
+        width=int(3 * scale),
+    )
 
-    # arco Aurora
-    draw.arc((62, 80, 194, 198), start=205, end=335, fill=(255, 255, 255, 255), width=18)
-    draw.ellipse((112, 112, 144, 144), fill=(255, 255, 255, 255))
+    draw.arc(
+        (
+            int(62 * scale),
+            int(80 * scale),
+            int(194 * scale),
+            int(198 * scale),
+        ),
+        start=205,
+        end=335,
+        fill=(255, 255, 255, 255),
+        width=int(18 * scale),
+    )
+    draw.ellipse(
+        (
+            int(112 * scale),
+            int(112 * scale),
+            int(144 * scale),
+            int(144 * scale),
+        ),
+        fill=(255, 255, 255, 255),
+    )
 
     img.save(AURORA_ICON_PATH)
 
-    logo = Image.new("RGBA", (720, 220), (0, 0, 0, 0))
-    logo.paste(img.resize((140, 140)), (20, 40))
-    logo.save(AURORA_LOGO_PATH)
-
 
 ensure_aurora_assets()
+
+
+def register_pdf_fonts():
+    if APTOS_FONT_PATH.exists():
+        pdfmetrics.registerFont(TTFont("Aptos", str(APTOS_FONT_PATH)))
+        base = "Aptos"
+    else:
+        base = "Helvetica"
+
+    if APTOS_BOLD_FONT_PATH.exists():
+        pdfmetrics.registerFont(TTFont("Aptos-Bold", str(APTOS_BOLD_FONT_PATH)))
+        bold = "Aptos-Bold"
+    else:
+        bold = "Helvetica-Bold"
+
+    return base, bold
+
+
+PDF_FONT, PDF_FONT_BOLD = register_pdf_fonts()
+
 
 st.set_page_config(
     page_title="Aurora",
@@ -171,7 +220,6 @@ footer { visibility: hidden !important; }
     backdrop-filter:blur(18px);
 }
 
-/* NAV */
 div[data-testid="stSegmentedControl"] {
     max-width: 620px !important;
     margin: 14px 0 18px 0 !important;
@@ -208,7 +256,6 @@ div[data-testid="stSegmentedControl"] label[data-baseweb="radio"]:has(input:chec
     box-shadow: 0 12px 28px rgba(79,70,229,.22) !important;
 }
 
-/* CONTROLS */
 div[data-baseweb="select"] > div {
     min-height: 44px !important;
     border-radius: 16px !important;
@@ -231,7 +278,6 @@ button[kind="secondary"],
     padding: 0 22px !important;
 }
 
-/* SECTIONS */
 .section-title{
     margin-top:12px !important;
     margin-bottom:4px !important;
@@ -246,7 +292,6 @@ button[kind="secondary"],
     color:#64748B !important;
 }
 
-/* COMPACT METRICS */
 .metric-compact-grid {
     display:grid;
     grid-template-columns: repeat(4, minmax(180px, 1fr));
@@ -289,7 +334,6 @@ button[kind="secondary"],
     line-height:1.35;
 }
 
-/* TABLES / CHARTS */
 [data-testid="stDataFrame"] {
     border-radius:24px;
     overflow:hidden;
@@ -306,7 +350,6 @@ svg.main-svg {
     box-shadow:none !important;
 }
 
-/* EXPORT PANEL */
 .export-panel {
     padding:10px 12px;
     border-radius:20px;
@@ -324,7 +367,6 @@ svg.main-svg {
     word-break:break-all;
 }
 
-/* RESPONSIVE */
 @media (max-width: 1100px) {
     .block-container {
         padding: 1rem 1.3rem 5rem 1.3rem !important;
@@ -349,14 +391,6 @@ svg.main-svg {
 """, unsafe_allow_html=True)
 
 
-def estado_servicio(uptime, fallos, latencia):
-    if uptime >= 99 and fallos == 0 and latencia < 1000:
-        return "OPERATIVO"
-    if uptime >= 95 and latencia < 3000:
-        return "DEGRADADO"
-    return "CRITICO"
-
-
 def dataframe_sha256(df_in: pd.DataFrame) -> str:
     df_hash = df_in.copy()
     for col in ["timestamp", "url"]:
@@ -375,44 +409,243 @@ def bytes_sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-class ReporteForensePDF(FPDF):
-    def header(self):
-        self.set_fill_color(11, 18, 32)
-        self.rect(0, 0, 210, 34, "F")
+def short_hash(value: str, groups: int = 6) -> str:
+    clean = value.upper()
+    return "-".join(clean[i:i + 4] for i in range(0, min(len(clean), groups * 4), 4))
 
-        self.image(str(AURORA_ICON_PATH), 12, 8, 18, 18)
 
-        self.set_text_color(255, 255, 255)
-        self.set_font("Helvetica", "B", 17)
-        self.set_xy(36, 8)
-        self.cell(0, 8, "Aurora", 0, 1)
+def estado_servicio(uptime, fallos, latencia):
+    if uptime >= 99 and fallos == 0 and latencia < 1000:
+        return "OPERATIVO"
+    if uptime >= 95 and latencia < 3000:
+        return "DEGRADADO"
+    return "CRITICO"
 
-        self.set_font("Helvetica", "", 8.5)
-        self.set_x(36)
-        self.cell(0, 5, "Observabilidad tecnica verificable | jaimesilva.co", 0, 1)
 
-        self.set_draw_color(79, 70, 229)
-        self.set_line_width(1.2)
-        self.line(12, 31, 198, 31)
+def estado_global_operacion(uptime, total_fallos, latencia):
+    if uptime >= 99 and total_fallos == 0 and latencia < 1000:
+        return "OPERATIONAL", AURORA_GREEN
+    if uptime >= 95 and latencia < 3000:
+        return "DEGRADED", AURORA_AMBER
+    return "CRITICAL", AURORA_RED
 
-        self.set_text_color(15, 23, 42)
-        self.ln(16)
 
-    def footer(self):
-        self.set_y(-18)
-        self.set_draw_color(220, 226, 235)
-        self.line(10, self.get_y(), 200, self.get_y())
-        self.set_y(-14)
-        self.set_font("Helvetica", "I", 7)
-        self.set_text_color(100, 116, 139)
-        self.cell(0, 8, f"Aurora | jaimesilva.co | Pagina {self.page_no()}", 0, 0, "C")
+def classify_latency(ms: float) -> str:
+    if ms < 1000:
+        return "Sana"
+    if ms < 3000:
+        return "Degradada"
+    return "Crítica"
+
+
+def make_qr_png(data: str) -> str:
+    qr = qrcode.QRCode(
+        version=2,
+        error_correction=qrcode.constants.ERROR_CORRECT_M,
+        box_size=8,
+        border=2,
+    )
+    qr.add_data(data)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="#0B1220", back_color="white").convert("RGB")
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+    img.save(tmp.name)
+    return tmp.name
+
+
+def p(text, style):
+    return Paragraph(str(text), style)
+
+
+def build_pdf_styles():
+    styles = getSampleStyleSheet()
+
+    styles.add(ParagraphStyle(
+        name="AuroraTitle",
+        fontName=PDF_FONT_BOLD,
+        fontSize=22,
+        leading=26,
+        textColor=colors.HexColor(AURORA_DARK),
+        spaceAfter=8,
+    ))
+
+    styles.add(ParagraphStyle(
+        name="AuroraH1",
+        fontName=PDF_FONT_BOLD,
+        fontSize=16,
+        leading=20,
+        textColor=colors.HexColor(AURORA_DARK),
+        spaceBefore=8,
+        spaceAfter=8,
+    ))
+
+    styles.add(ParagraphStyle(
+        name="AuroraH2",
+        fontName=PDF_FONT_BOLD,
+        fontSize=11,
+        leading=14,
+        textColor=colors.HexColor(AURORA_DARK),
+        spaceBefore=6,
+        spaceAfter=5,
+    ))
+
+    styles.add(ParagraphStyle(
+        name="AuroraBody",
+        fontName=PDF_FONT,
+        fontSize=9,
+        leading=13,
+        textColor=colors.HexColor("#334155"),
+        spaceAfter=6,
+    ))
+
+    styles.add(ParagraphStyle(
+        name="AuroraSmall",
+        fontName=PDF_FONT,
+        fontSize=7.5,
+        leading=10,
+        textColor=colors.HexColor(AURORA_MUTED),
+    ))
+
+    styles.add(ParagraphStyle(
+        name="AuroraKpiLabel",
+        fontName=PDF_FONT_BOLD,
+        fontSize=7,
+        leading=9,
+        textColor=colors.HexColor(AURORA_MUTED),
+        alignment=TA_LEFT,
+    ))
+
+    styles.add(ParagraphStyle(
+        name="AuroraKpiValue",
+        fontName=PDF_FONT_BOLD,
+        fontSize=17,
+        leading=20,
+        textColor=colors.HexColor(AURORA_DARK),
+        alignment=TA_LEFT,
+    ))
+
+    styles.add(ParagraphStyle(
+        name="AuroraWhite",
+        fontName=PDF_FONT_BOLD,
+        fontSize=12,
+        leading=15,
+        textColor=colors.white,
+    ))
+
+    styles.add(ParagraphStyle(
+        name="AuroraWhiteSmall",
+        fontName=PDF_FONT,
+        fontSize=8,
+        leading=10,
+        textColor=colors.HexColor("#CBD5E1"),
+    ))
+
+    styles.add(ParagraphStyle(
+        name="CenterSmall",
+        fontName=PDF_FONT,
+        fontSize=7,
+        leading=9,
+        textColor=colors.HexColor(AURORA_MUTED),
+        alignment=TA_CENTER,
+    ))
+
+    return styles
+
+
+def draw_pdf_header_footer(canvas, doc, report_id, generated_utc):
+    canvas.saveState()
+
+    width, height = A4
+
+    canvas.setFillColor(colors.HexColor(AURORA_DARK))
+    canvas.rect(0, height - 24 * mm, width, 24 * mm, fill=1, stroke=0)
+
+    canvas.drawImage(
+        str(AURORA_ICON_PATH),
+        14 * mm,
+        height - 18 * mm,
+        10 * mm,
+        10 * mm,
+        mask="auto",
+        preserveAspectRatio=True,
+        anchor="c",
+    )
+
+    canvas.setFillColor(colors.white)
+    canvas.setFont(PDF_FONT_BOLD, 10)
+    canvas.drawString(29 * mm, height - 12 * mm, "Aurora")
+
+    canvas.setFont(PDF_FONT, 7)
+    canvas.setFillColor(colors.HexColor("#CBD5E1"))
+    canvas.drawString(29 * mm, height - 16 * mm, "Operational Evidence Report")
+
+    canvas.setStrokeColor(colors.HexColor(AURORA_PRIMARY))
+    canvas.setLineWidth(1.2)
+    canvas.line(14 * mm, height - 22 * mm, width - 14 * mm, height - 22 * mm)
+
+    canvas.setFont(PDF_FONT, 6.5)
+    canvas.setFillColor(colors.HexColor("#94A3B8"))
+    canvas.drawRightString(width - 14 * mm, height - 12 * mm, report_id)
+    canvas.drawRightString(width - 14 * mm, height - 16 * mm, generated_utc)
+
+    canvas.setStrokeColor(colors.HexColor("#E2E8F0"))
+    canvas.setLineWidth(0.5)
+    canvas.line(14 * mm, 15 * mm, width - 14 * mm, 15 * mm)
+
+    canvas.setFont(PDF_FONT, 6.5)
+    canvas.setFillColor(colors.HexColor("#64748B"))
+    canvas.drawString(
+        14 * mm,
+        10 * mm,
+        "Aurora Observability Platform · Technical Evidence Report · Integrity Protected",
+    )
+    canvas.drawRightString(width - 14 * mm, 10 * mm, f"Page {doc.page}")
+
+    canvas.restoreState()
+
+
+def kpi_card(label, value, note, styles):
+    content = [
+        [p(label.upper(), styles["AuroraKpiLabel"])],
+        [p(value, styles["AuroraKpiValue"])],
+        [p(note, styles["AuroraSmall"])],
+    ]
+    table = Table(content, colWidths=[40 * mm])
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#F8FAFC")),
+        ("BOX", (0, 0), (-1, -1), 0.8, colors.HexColor("#E2E8F0")),
+        ("LEFTPADDING", (0, 0), (-1, -1), 8),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+        ("TOPPADDING", (0, 0), (-1, -1), 7),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
+    ]))
+    return table
+
+
+def section_band(title, styles):
+    table = Table([[p(title, styles["AuroraWhite"])]], colWidths=[182 * mm])
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor(AURORA_DARK)),
+        ("LEFTPADDING", (0, 0), (-1, -1), 10),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+        ("TOPPADDING", (0, 0), (-1, -1), 7),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
+    ]))
+    return table
 
 
 def generar_pdf_bytes(df_operacion):
     df_pdf = df_operacion.copy()
 
+    for col in ["timestamp", "url", "http_code", "latency_ms", "error_type", "screenshot_url", "content_hash", "ssl_issuer", "ssl_expiry"]:
+        if col not in df_pdf.columns:
+            df_pdf[col] = None
+
     report_id = f"AUR-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:8].upper()}"
+    generated_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     source_hash = dataframe_sha256(df_pdf)
+    verify_url = f"{VERIFY_BASE_URL}/{report_id}"
+    qr_path = make_qr_png(verify_url)
 
     df_pdf["is_fail"] = (
         (df_pdf["http_code"] >= 400)
@@ -455,189 +688,262 @@ def generar_pdf_bytes(df_operacion):
         axis=1,
     )
 
-    pdf = ReporteForensePDF()
-    pdf.set_auto_page_break(auto=True, margin=18)
-    pdf.add_page()
+    op_status, op_color = estado_global_operacion(uptime, total_fallos, latencia_promedio)
 
-    generado = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+    tmp.close()
 
-    pdf.set_font("Arial", "B", 14)
-    pdf.set_text_color(15, 23, 42)
-    pdf.cell(0, 8, "INFORME TECNICO DE OBSERVABILIDAD Y DISPONIBILIDAD OPERACIONAL", 0, 1)
-
-    pdf.set_font("Arial", "", 9)
-    pdf.set_text_color(71, 85, 105)
-    pdf.multi_cell(
-        0,
-        5,
-        f"Generado: {generado}\n"
-        f"Herramienta: Aurora\n"
-        f"Version Aurora: {AURORA_VERSION}\n"
-        f"ID informe: {report_id}\n"
-        f"Autor / desarrollador: jaimesilva.co\n"
-        f"Hash SHA-256 datos fuente: {source_hash}\n"
-        f"Alcance: operacion monitoreada completa disponible en la boveda tecnica al momento de generacion."
+    doc = SimpleDocTemplate(
+        tmp.name,
+        pagesize=A4,
+        rightMargin=14 * mm,
+        leftMargin=14 * mm,
+        topMargin=34 * mm,
+        bottomMargin=20 * mm,
+        title=f"Aurora Technical Evidence Report {report_id}",
+        author=AUTHOR_WEB,
+        subject="Operational availability, latency and incident evidence report",
+        creator="Aurora Observability Platform",
     )
-    pdf.ln(3)
 
-    pdf.set_text_color(15, 23, 42)
-    pdf.set_font("Arial", "B", 11)
-    pdf.cell(0, 8, "1. Resumen ejecutivo", 0, 1)
+    styles = build_pdf_styles()
+    story = []
 
-    pdf.set_font("Arial", "", 9)
-    pdf.multi_cell(
-        0,
-        5,
-        f"Aurora registro {total_checks} verificaciones tecnicas sobre la operacion monitoreada. "
-        f"La disponibilidad global observada fue {uptime:.2f}%, con {total_fallos} incidentes "
-        f"clasificados por errores HTTP, DNS/TLS, fallas de servicio o errores registrados. "
-        f"La latencia promedio fue {latencia_promedio:.0f} ms. "
-        f"La ventana tecnica observada comprende desde {ventana_inicio} hasta {ventana_fin}."
+    hero = Table(
+        [[
+            RLImage(str(AURORA_ICON_PATH), width=18 * mm, height=18 * mm),
+            [
+                p("Aurora Technical Evidence Report", styles["AuroraTitle"]),
+                p("Operational availability, latency, incident integrity and traceability package.", styles["AuroraBody"]),
+                p(f"Developed by {AUTHOR_WEB} · Aurora v{AURORA_VERSION}", styles["AuroraSmall"]),
+            ],
+            [
+                p("STATUS", styles["AuroraKpiLabel"]),
+                p(op_status, ParagraphStyle(
+                    name="StatusStyle",
+                    fontName=PDF_FONT_BOLD,
+                    fontSize=15,
+                    leading=18,
+                    textColor=colors.HexColor(op_color),
+                )),
+                p(f"Report ID<br/>{report_id}", styles["AuroraSmall"]),
+            ]
+        ]],
+        colWidths=[24 * mm, 100 * mm, 58 * mm],
     )
-    pdf.ln(3)
+    hero.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#F8FAFC")),
+        ("BOX", (0, 0), (-1, -1), 0.8, colors.HexColor("#E2E8F0")),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 10),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+        ("TOPPADDING", (0, 0), (-1, -1), 12),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 12),
+    ]))
+    story.append(hero)
+    story.append(Spacer(1, 8 * mm))
 
-    pdf.set_font("Arial", "B", 11)
-    pdf.cell(0, 8, "2. Declaracion de integridad tecnica", 0, 1)
-    pdf.set_font("Arial", "", 9)
-    pdf.multi_cell(
-        0,
-        5,
-        "El presente informe es generado automaticamente a partir de registros almacenados en la boveda tecnica "
-        "de Aurora. Incluye trazas temporales, codigos HTTP, latencias, tipos de error, hashes de contenido, "
-        "datos SSL y referencias de evidencia visual cuando existen. Su finalidad es servir como soporte tecnico "
-        "documental de disponibilidad, degradacion o indisponibilidad operacional."
+    story.append(section_band("Executive Operational Summary", styles))
+    story.append(Spacer(1, 4 * mm))
+
+    summary = (
+        f"Aurora observed the monitored operation between <b>{ventana_inicio}</b> and <b>{ventana_fin}</b>. "
+        f"The global availability measured was <b>{uptime:.2f}%</b>, with <b>{total_fallos}</b> incidents "
+        f"over <b>{total_checks}</b> technical checks. Average latency was <b>{latencia_promedio:.0f} ms</b>. "
+        f"The report consolidates HTTP status, DNS/TLS failures, latency degradation, content hashes, "
+        f"SSL metadata and visual evidence references where available."
     )
-    pdf.ln(3)
+    story.append(p(summary, styles["AuroraBody"]))
 
-    pdf.set_font("Arial", "B", 11)
-    pdf.cell(0, 8, "3. Metricas globales", 0, 1)
+    kpi_grid = Table(
+        [[
+            kpi_card("Availability", f"{uptime:.2f}%", "Global measured uptime", styles),
+            kpi_card("Incidents", str(total_fallos), f"Over {total_checks} checks", styles),
+            kpi_card("Avg latency", f"{latencia_promedio:.0f} ms", "Operational response time", styles),
+            kpi_card("Data integrity", short_hash(source_hash, 3), "Dataset SHA-256", styles),
+        ]],
+        colWidths=[45.5 * mm, 45.5 * mm, 45.5 * mm, 45.5 * mm],
+    )
+    kpi_grid.setStyle(TableStyle([
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 0),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+    ]))
+    story.append(Spacer(1, 4 * mm))
+    story.append(kpi_grid)
+    story.append(Spacer(1, 7 * mm))
 
-    pdf.set_font("Arial", "B", 8)
-    pdf.set_fill_color(241, 245, 249)
-    pdf.cell(48, 7, "Disponibilidad", 1, 0, "C", True)
-    pdf.cell(48, 7, "Incidentes", 1, 0, "C", True)
-    pdf.cell(48, 7, "Verificaciones", 1, 0, "C", True)
-    pdf.cell(48, 7, "Latencia promedio", 1, 1, "C", True)
+    integrity_box = Table(
+        [[
+            [
+                p("Integrity & Chain-of-Custody Snapshot", styles["AuroraH2"]),
+                p(f"<b>Generated UTC:</b> {generated_utc}", styles["AuroraBody"]),
+                p(f"<b>Source dataset SHA-256:</b> {source_hash}", styles["AuroraBody"]),
+                p(f"<b>Method:</b> Automated extraction from Aurora technical vault. Full monitored operation, independent of dashboard filters.", styles["AuroraBody"]),
+                p("<b>Standards alignment:</b> ISO/IEC 27037 principles for digital evidence handling and NIST SP 800-92 log management guidance.", styles["AuroraBody"]),
+            ],
+            [
+                RLImage(qr_path, width=28 * mm, height=28 * mm),
+                p("Verification endpoint", styles["CenterSmall"]),
+                p(verify_url, styles["CenterSmall"]),
+            ]
+        ]],
+        colWidths=[138 * mm, 44 * mm],
+    )
+    integrity_box.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#EEF2FF")),
+        ("BOX", (0, 0), (-1, -1), 0.8, colors.HexColor(AURORA_PRIMARY)),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 10),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+        ("TOPPADDING", (0, 0), (-1, -1), 10),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
+    ]))
+    story.append(integrity_box)
+    story.append(PageBreak())
 
-    pdf.set_font("Arial", "", 9)
-    pdf.cell(48, 8, f"{uptime:.2f}%", 1, 0, "C")
-    pdf.cell(48, 8, str(total_fallos), 1, 0, "C")
-    pdf.cell(48, 8, str(total_checks), 1, 0, "C")
-    pdf.cell(48, 8, f"{latencia_promedio:.0f} ms", 1, 1, "C")
-    pdf.ln(4)
+    story.append(section_band("Operational Service Matrix", styles))
+    story.append(Spacer(1, 4 * mm))
 
-    pdf.set_font("Arial", "B", 11)
-    pdf.cell(0, 8, "4. Salud por servicio", 0, 1)
+    service_rows = [[
+        p("Service", styles["AuroraWhiteSmall"]),
+        p("Status", styles["AuroraWhiteSmall"]),
+        p("Uptime", styles["AuroraWhiteSmall"]),
+        p("Score", styles["AuroraWhiteSmall"]),
+        p("Failures", styles["AuroraWhiteSmall"]),
+        p("Avg Lat.", styles["AuroraWhiteSmall"]),
+        p("Evidence", styles["AuroraWhiteSmall"]),
+    ]]
 
-    pdf.set_font("Arial", "B", 7)
-    pdf.set_fill_color(15, 23, 42)
-    pdf.set_text_color(255, 255, 255)
-    pdf.cell(72, 7, "Servicio", 1, 0, "C", True)
-    pdf.cell(22, 7, "Estado", 1, 0, "C", True)
-    pdf.cell(20, 7, "Uptime", 1, 0, "C", True)
-    pdf.cell(18, 7, "Score", 1, 0, "C", True)
-    pdf.cell(18, 7, "Fallos", 1, 0, "C", True)
-    pdf.cell(22, 7, "Lat. prom.", 1, 0, "C", True)
-    pdf.cell(18, 7, "Evid.", 1, 1, "C", True)
-
-    pdf.set_text_color(15, 23, 42)
-    pdf.set_font("Arial", "", 7)
-
-    df_servicios_pdf = df_servicios_pdf.sort_values(
+    df_services_out = df_servicios_pdf.sort_values(
         by=["uptime", "fallos", "latencia_promedio"],
         ascending=[True, False, False],
     )
 
-    for _, r in df_servicios_pdf.head(40).iterrows():
-        url = str(r["url"]).replace("https://", "").replace("http://", "")[:42]
-        pdf.cell(72, 7, url, 1)
-        pdf.cell(22, 7, str(r["estado"]), 1, 0, "C")
-        pdf.cell(20, 7, f"{r['uptime']:.2f}%", 1, 0, "C")
-        pdf.cell(18, 7, f"{r['health_score']:.1f}", 1, 0, "C")
-        pdf.cell(18, 7, str(int(r["fallos"])), 1, 0, "C")
-        pdf.cell(22, 7, f"{r['latencia_promedio']:.0f}", 1, 0, "C")
-        pdf.cell(18, 7, str(int(r["evidencia"])), 1, 1, "C")
+    for _, r in df_services_out.head(50).iterrows():
+        service_rows.append([
+            p(str(r["url"]).replace("https://", "").replace("http://", "")[:58], styles["AuroraSmall"]),
+            p(str(r["estado"]), styles["AuroraSmall"]),
+            p(f"{r['uptime']:.2f}%", styles["AuroraSmall"]),
+            p(f"{r['health_score']:.1f}", styles["AuroraSmall"]),
+            p(str(int(r["fallos"])), styles["AuroraSmall"]),
+            p(f"{r['latencia_promedio']:.0f} ms", styles["AuroraSmall"]),
+            p(str(int(r["evidencia"])), styles["AuroraSmall"]),
+        ])
 
-    pdf.ln(4)
+    service_table = Table(
+        service_rows,
+        repeatRows=1,
+        colWidths=[61 * mm, 23 * mm, 20 * mm, 17 * mm, 17 * mm, 23 * mm, 21 * mm],
+    )
+    service_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor(AURORA_DARK)),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("GRID", (0, 0), (-1, -1), 0.35, colors.HexColor("#CBD5E1")),
+        ("BACKGROUND", (0, 1), (-1, -1), colors.white),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F8FAFC")]),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 5),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+        ("TOPPADDING", (0, 0), (-1, -1), 5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+    ]))
+    story.append(service_table)
+    story.append(PageBreak())
 
-    pdf.set_font("Arial", "B", 11)
-    pdf.cell(0, 8, "5. Bitacora de incidentes", 0, 1)
-
-    pdf.set_font("Arial", "B", 7)
-    pdf.set_fill_color(15, 23, 42)
-    pdf.set_text_color(255, 255, 255)
-    pdf.cell(36, 7, "Fecha UTC", 1, 0, "C", True)
-    pdf.cell(72, 7, "Servicio", 1, 0, "C", True)
-    pdf.cell(20, 7, "Codigo", 1, 0, "C", True)
-    pdf.cell(24, 7, "Latencia", 1, 0, "C", True)
-    pdf.cell(38, 7, "Evento", 1, 1, "C", True)
-
-    pdf.set_text_color(15, 23, 42)
-    pdf.set_font("Arial", "", 7)
+    story.append(section_band("Incident Timeline", styles))
+    story.append(Spacer(1, 4 * mm))
 
     if df_fallos.empty:
-        pdf.cell(190, 8, "No se registraron incidentes en la operacion monitoreada.", 1, 1)
+        story.append(p("No incidents were recorded in the monitored operation.", styles["AuroraBody"]))
     else:
-        for _, row in df_fallos.sort_values("timestamp", ascending=False).head(100).iterrows():
-            fecha = str(row.get("timestamp", ""))[:19]
-            url = str(row.get("url", "")).replace("https://", "").replace("http://", "")[:42]
+        for _, row in df_fallos.sort_values("timestamp", ascending=False).head(80).iterrows():
             code = str(int(row["http_code"])) if pd.notna(row.get("http_code")) else "DNS/TLS"
-            latency = f"{float(row.get('latency_ms', 0)):.0f} ms"
-            event = str(row.get("error_type", ""))[:30]
+            event = str(row.get("error_type") or "Technical failure")
+            latency = f"{float(row.get('latency_ms') or 0):.0f} ms"
+            service = str(row.get("url", "")).replace("https://", "").replace("http://", "")
+            ts = str(row.get("timestamp", ""))[:19]
 
-            pdf.cell(36, 7, fecha, 1)
-            pdf.cell(72, 7, url, 1)
-            pdf.cell(20, 7, code, 1, 0, "C")
-            pdf.cell(24, 7, latency, 1, 0, "C")
-            pdf.cell(38, 7, event, 1)
-            pdf.ln()
+            item = Table(
+                [[
+                    p(ts, styles["AuroraSmall"]),
+                    p(service, styles["AuroraBody"]),
+                    p(code, styles["AuroraSmall"]),
+                    p(latency, styles["AuroraSmall"]),
+                    p(event[:120], styles["AuroraSmall"]),
+                ]],
+                colWidths=[31 * mm, 65 * mm, 20 * mm, 22 * mm, 44 * mm],
+            )
+            item.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#FFFFFF")),
+                ("BOX", (0, 0), (-1, -1), 0.4, colors.HexColor("#CBD5E1")),
+                ("LEFTPADDING", (0, 0), (-1, -1), 6),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+                ("TOPPADDING", (0, 0), (-1, -1), 5),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ]))
+            story.append(item)
+            story.append(Spacer(1, 2 * mm))
 
-    pdf.ln(4)
+    story.append(PageBreak())
 
-    pdf.set_font("Arial", "B", 11)
-    pdf.cell(0, 8, "6. Sello tecnico Aurora", 0, 1)
-    pdf.set_font("Arial", "", 9)
-    pdf.multi_cell(
-        0,
-        5,
-        "Documento generado por Aurora Monitoring. "
-        "Alineado tecnicamente con ISO/IEC 27037 y NIST SP 800-92. "
-        "Desarrollado por jaimesilva.co. "
-        "Este reporte no sustituye peritaje judicial, pero preserva una relacion tecnica ordenada, "
-        "cronologica y verificable de los eventos registrados por la herramienta."
+    story.append(section_band("Technical Seal & Evidentiary Scope", styles))
+    story.append(Spacer(1, 5 * mm))
+
+    seal = Table(
+        [[
+            [
+                p("INTEGRITY PROTECTED", ParagraphStyle(
+                    name="SealTitle",
+                    fontName=PDF_FONT_BOLD,
+                    fontSize=18,
+                    leading=22,
+                    textColor=colors.HexColor(AURORA_PRIMARY),
+                )),
+                p("Aurora Operational Evidence Snapshot", styles["AuroraH2"]),
+                p(
+                    f"This document was generated by Aurora v{AURORA_VERSION}, developed by {AUTHOR_WEB}. "
+                    f"It preserves an ordered, chronological and verifiable technical account of the events "
+                    f"registered by the monitoring system. This report is a technical evidence package and "
+                    f"does not replace a court-appointed expert opinion.",
+                    styles["AuroraBody"],
+                ),
+                p(f"<b>Report ID:</b> {report_id}", styles["AuroraBody"]),
+                p(f"<b>Dataset SHA-256:</b> {source_hash}", styles["AuroraBody"]),
+                p(f"<b>Verification:</b> {verify_url}", styles["AuroraBody"]),
+            ],
+            [
+                RLImage(str(AURORA_ICON_PATH), width=24 * mm, height=24 * mm),
+                Spacer(1, 4 * mm),
+                RLImage(qr_path, width=31 * mm, height=31 * mm),
+                p("Scan to verify report reference", styles["CenterSmall"]),
+            ]
+        ]],
+        colWidths=[132 * mm, 50 * mm],
+    )
+    seal.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#F8FAFC")),
+        ("BOX", (0, 0), (-1, -1), 1.0, colors.HexColor(AURORA_PRIMARY)),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 12),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 12),
+        ("TOPPADDING", (0, 0), (-1, -1), 12),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 12),
+    ]))
+    story.append(seal)
+
+    story.append(Spacer(1, 8 * mm))
+    story.append(p("Footer placement note: operational identity, integrity and page continuity are kept in the footer on every page. Core evidentiary identifiers remain in the body because they must survive printing, screenshots and partial extraction.", styles["AuroraSmall"]))
+
+    doc.build(
+        story,
+        onFirstPage=lambda canvas, doc: draw_pdf_header_footer(canvas, doc, report_id, generated_utc),
+        onLaterPages=lambda canvas, doc: draw_pdf_header_footer(canvas, doc, report_id, generated_utc),
     )
 
-    pdf.ln(6)
-    pdf.set_fill_color(241, 245, 249)
-    pdf.set_draw_color(79, 70, 229)
-    pdf.rect(18, pdf.get_y(), 174, 28, "DF")
-
-    pdf.set_xy(24, pdf.get_y() + 5)
-    pdf.set_font("Helvetica", "B", 10)
-    pdf.set_text_color(15, 23, 42)
-    pdf.cell(0, 5, "SELLO TECNICO AURORA", 0, 1)
-
-    pdf.set_x(24)
-    pdf.set_font("Helvetica", "", 8)
-    pdf.multi_cell(
-        160,
-        4,
-        f"Informe generado por Aurora v{AURORA_VERSION} | jaimesilva.co | "
-        f"Hash SHA-256 de datos fuente: {source_hash[:32]}..."
-    )
-
-    pdf.ln(8)
-    pdf.set_draw_color(79, 70, 229)
-    pdf.set_line_width(0.6)
-    pdf.line(25, pdf.get_y(), 105, pdf.get_y())
-    pdf.ln(2)
-    pdf.set_font("Arial", "B", 9)
-    pdf.cell(0, 5, "Sello tecnico Aurora | jaimesilva.co", 0, 1)
-
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-        pdf.output(tmp.name)
-        with open(tmp.name, "rb") as f:
-            return f.read()
+    with open(tmp.name, "rb") as f:
+        return f.read()
 
 
 @st.cache_resource
@@ -693,14 +999,6 @@ def short_url(url: str, max_len: int = 62) -> str:
     return cleaned if len(cleaned) <= max_len else cleaned[:max_len] + "..."
 
 
-def classify_latency(ms: float) -> str:
-    if ms < 1000:
-        return "Sana"
-    if ms < 3000:
-        return "Degradada"
-    return "Crítica"
-
-
 st.markdown("""
 <div class="topbar">
   <div class="brand-wrap">
@@ -742,10 +1040,10 @@ with export_right:
     st.download_button(
         label="📄 PDF",
         data=pdf_bytes,
-        file_name=f"Aurora_Informe_Forense_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
+        file_name=f"Aurora_Enterprise_Evidence_Report_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
         mime="application/pdf",
         key="top_pdf",
-        help="Exportar informe a PDF",
+        help="Exportar informe técnico completo a PDF",
         use_container_width=True,
     )
     st.markdown(f'<div class="hash-caption">SHA-256 PDF: {pdf_hash[:16]}...</div>', unsafe_allow_html=True)
