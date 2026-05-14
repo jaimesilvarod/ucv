@@ -5,6 +5,19 @@ import plotly.express as px
 from datetime import datetime
 from fpdf import FPDF
 import tempfile
+from supabase import Client, create_client
+from postgrest import SyncPostgrestClient
+
+@st.cache_resource
+def init_connection():
+    return create_client(
+        st.secrets["SUPABASE_URL"],
+        st.secrets["SUPABASE_KEY"],
+    )
+
+import httpx
+
+http_client = httpx.Client(timeout=20.0)
 
 st.set_page_config(
     page_title="Forensic Web Monitor | UCV",
@@ -309,25 +322,39 @@ def init_connection():
 
 @st.cache_data(ttl=300)
 def load_data():
-    response = (
-        init_connection()
-        .table("incidentes")
-        .select("*")
-        .order("timestamp", desc=True)
-        .limit(2000)
-        .execute()
-    )
-    df = pd.DataFrame(response.data)
+    try:
+        response = (
+            init_connection()
+            .table("incidentes")
+            .select("""
+                timestamp,
+                url,
+                http_code,
+                latency_ms,
+                error_type,
+                screenshot_url,
+                content_hash,
+                ssl_issuer,
+                ssl_expiry
+            """)
+            .order("timestamp", desc=True)
+            .limit(500)
+            .execute()
+        )
 
-    if not df.empty:
-        df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
-        df["latency_ms"] = pd.to_numeric(df["latency_ms"], errors="coerce").fillna(0)
-        df["http_code"] = pd.to_numeric(df["http_code"], errors="coerce")
-        for col in ["error_type", "url", "screenshot_url", "content_hash", "ssl_issuer", "ssl_expiry"]:
-            if col not in df.columns:
-                df[col] = None
+        df = pd.DataFrame(response.data)
 
-    return df
+        if not df.empty:
+            df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
+            df["latency_ms"] = pd.to_numeric(df["latency_ms"], errors="coerce").fillna(0)
+            df["http_code"] = pd.to_numeric(df["http_code"], errors="coerce")
+
+        return df
+
+    except Exception as e:
+        st.error("Aurora no pudo conectarse con la bóveda forense.")
+        st.exception(e)
+        return pd.DataFrame()
 
 
 def short_url(url: str, max_len: int = 58) -> str:
