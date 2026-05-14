@@ -169,6 +169,23 @@ html, body, [class*="css"] {
 h1,h2,h3 {
     letter-spacing: -0.05em;
 }
+
+[data-testid="stDataFrame"] {
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid rgba(15,23,42,0.08);
+    box-shadow: 0 10px 28px rgba(15,23,42,0.045);
+    background: rgba(255,255,255,0.72);
+}
+
+[data-testid="stDataFrame"] div {
+    font-size: 0.92rem;
+}
+
+section[data-testid="stSidebar"] {
+    min-width: 290px !important;
+    width: 290px !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -278,42 +295,24 @@ def classify_latency(ms: float) -> str:
 
 st.markdown("""
 <div class="topbar">
-
-<div class="brand-wrap">
-
-<div class="brand-logo">
-<svg width="34" height="34" viewBox="0 0 64 64" fill="none">
-<defs>
-<linearGradient id="auroraGradient" x1="0" y1="0" x2="1" y2="1">
-<stop offset="0%" stop-color="#4F46E5"/>
-<stop offset="100%" stop-color="#06B6D4"/>
-</linearGradient>
-</defs>
-
-<circle cx="32" cy="32" r="30"
-fill="url(#auroraGradient)"
-opacity="0.15"/>
-
-<path d="M18 38C24 18 40 18 46 38"
-stroke="url(#auroraGradient)"
-stroke-width="5"
-stroke-linecap="round"/>
-
-<circle cx="32" cy="32" r="4"
-fill="#4F46E5"/>
-</svg>
-</div>
-
-<div class="brand-text">
-Aurora
-</div>
-
-<div class="brand-badge">
-LIVE MONITORING
-</div>
-
-</div>
-
+  <div class="brand-wrap">
+    <div class="brand-logo">
+      <svg width="34" height="34" viewBox="0 0 64 64" fill="none">
+        <defs>
+          <linearGradient id="g" x1="8" y1="8" x2="56" y2="56">
+            <stop offset="0%" stop-color="#4F46E5"/>
+            <stop offset="55%" stop-color="#06B6D4"/>
+            <stop offset="100%" stop-color="#10B981"/>
+          </linearGradient>
+        </defs>
+        <rect x="6" y="6" width="52" height="52" rx="16" fill="url(#g)"/>
+        <path d="M18 39C23 22 41 22 46 39" stroke="white" stroke-width="5" stroke-linecap="round"/>
+        <circle cx="32" cy="32" r="5" fill="white"/>
+      </svg>
+    </div>
+    <div class="brand-text">Aurora</div>
+    <div class="brand-badge">LIVE MONITORING</div>
+  </div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -504,50 +503,128 @@ elif section == "Latencia":
         x="timestamp",
         y="latency_ms",
         color="url",
-        template="plotly_white",
+        template="simple_white",
         markers=True,
     )
+    
+    fig_latencia.update_traces(
+        line=dict(width=3.2),
+        marker=dict(size=7, line=dict(width=1.5, color="white")),
+    )
+    
     fig_latencia.update_layout(
         height=560,
-        plot_bgcolor="rgba(255,255,255,0)",
-        paper_bgcolor="rgba(255,255,255,0)",
-        font=dict(color="#0F172A"),
-        xaxis=dict(showgrid=False, title=""),
-        yaxis=dict(showgrid=True, gridcolor="rgba(148,163,184,0.25)", title="Latencia (ms)"),
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#0F172A", size=13),
+        hovermode="x unified",
+        xaxis=dict(
+            title="",
+            showgrid=False,
+            zeroline=False,
+            tickfont=dict(color="#64748B"),
+        ),
+        yaxis=dict(
+            title="Latencia (ms)",
+            showgrid=True,
+            gridcolor="rgba(100,116,139,0.18)",
+            zeroline=False,
+            tickfont=dict(color="#64748B"),
+        ),
         legend=dict(
+            title="",
             orientation="h",
             yanchor="bottom",
             y=1.08,
-            xanchor="right",
-            x=1,
-            bgcolor="rgba(255,255,255,0.80)",
-            bordercolor="rgba(15,23,42,0.08)",
-            borderwidth=1,
+            xanchor="left",
+            x=0,
+            bgcolor="rgba(255,255,255,0)",
+            font=dict(size=12, color="#334155"),
         ),
-        margin=dict(l=10, r=10, t=45, b=10),
+        margin=dict(l=20, r=20, t=40, b=20),
     )
-    fig_latencia.update_traces(line=dict(width=3))
+    
+    fig_latencia.add_hline(
+        y=3000,
+        line_dash="dash",
+        line_color="rgba(239,68,68,0.45)",
+        annotation_text="Umbral crítico 3000 ms",
+        annotation_position="top left",
+    )
     st.plotly_chart(fig_latencia, use_container_width=True)
 
 elif section == "Incidentes":
-    st.markdown('<div class="section-title">Bitácora de Fallos y Tiempos de Inactividad</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-title">Bitácora de Fallos y Tiempos de Inactividad</div>',
+        unsafe_allow_html=True
+    )
 
     if df_fallos.empty:
         st.success("No se han registrado fallos para los filtros seleccionados.")
     else:
-        st.dataframe(
+        df_fallos_view = (
             df_fallos[["timestamp", "url", "http_code", "latency_ms", "error_type"]]
-            .sort_values(by="timestamp", ascending=False),
+            .sort_values(by="timestamp", ascending=False)
+            .copy()
+        )
+
+        df_fallos_view["timestamp"] = df_fallos_view["timestamp"].dt.strftime("%Y-%m-%d %H:%M:%S UTC")
+        df_fallos_view["url"] = df_fallos_view["url"].apply(lambda x: short_url(x, 70))
+        df_fallos_view["http_code"] = df_fallos_view["http_code"].apply(
+            lambda x: "DNS/TLS" if pd.isna(x) else str(int(x))
+        )
+        df_fallos_view["latency_ms"] = df_fallos_view["latency_ms"].astype(int).astype(str) + " ms"
+
+        df_fallos_view = df_fallos_view.rename(columns={
+            "timestamp": "Fecha",
+            "url": "Servicio",
+            "http_code": "Código",
+            "latency_ms": "Latencia",
+            "error_type": "Evento"
+        })
+
+        st.dataframe(
+            df_fallos_view,
             use_container_width=True,
             hide_index=True,
+            height=520,
         )
 
 elif section == "Evidencia Forense":
-    st.markdown('<div class="section-title">Auditoría de Integridad y Certificados</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-title">Auditoría de Integridad y Certificados</div>',
+        unsafe_allow_html=True
+    )
+
+    df_evidencia_view = (
+        df_filtrado[["timestamp", "url", "content_hash", "ssl_issuer", "ssl_expiry", "screenshot_url"]]
+        .sort_values(by="timestamp", ascending=False)
+        .copy()
+    )
+
+    df_evidencia_view["timestamp"] = df_evidencia_view["timestamp"].dt.strftime("%Y-%m-%d %H:%M:%S UTC")
+    df_evidencia_view["url"] = df_evidencia_view["url"].apply(lambda x: short_url(x, 70))
+    df_evidencia_view["content_hash"] = df_evidencia_view["content_hash"].fillna("Sin hash").apply(
+        lambda x: x[:18] + "..." if isinstance(x, str) and len(x) > 18 else x
+    )
+    df_evidencia_view["ssl_issuer"] = df_evidencia_view["ssl_issuer"].fillna("No disponible").apply(
+        lambda x: x[:50] + "..." if isinstance(x, str) and len(x) > 50 else x
+    )
+    df_evidencia_view["ssl_expiry"] = df_evidencia_view["ssl_expiry"].fillna("No disponible")
+    df_evidencia_view["screenshot_url"] = df_evidencia_view["screenshot_url"].fillna("Sin captura")
+
+    df_evidencia_view = df_evidencia_view.rename(columns={
+        "timestamp": "Fecha",
+        "url": "Servicio",
+        "content_hash": "Hash SHA256",
+        "ssl_issuer": "Emisor SSL",
+        "ssl_expiry": "Expira SSL",
+        "screenshot_url": "Evidencia"
+    })
 
     st.dataframe(
-        df_filtrado[["timestamp", "url", "content_hash", "ssl_issuer", "ssl_expiry", "screenshot_url"]]
-        .sort_values(by="timestamp", ascending=False),
+        df_evidencia_view,
         use_container_width=True,
         hide_index=True,
+        height=520,
     )
