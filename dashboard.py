@@ -6,6 +6,15 @@ from datetime import datetime, timedelta
 from fpdf import FPDF
 import base64
 
+# 1. CONFIGURACIÓN DE PÁGINA (Debe ser el primer comando de Streamlit siempre)
+st.set_page_config(
+    page_title="Forensic Web Monitor | UCV", 
+    page_icon="🛡️", 
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# 2. DEFINICIÓN DE CLASES Y FUNCIONES
 class ReporteForensePDF(FPDF):
     def header(self):
         self.set_font('Arial', 'B', 15)
@@ -18,7 +27,7 @@ class ReporteForensePDF(FPDF):
     def footer(self):
         self.set_y(-15)
         self.set_font('Arial', 'I', 8)
-        self.cell(0, 10, f'Página {self.page_no()}', 0, 0, 'C')
+        self.cell(0, 10, f'Pagina {self.page_no()}', 0, 0, 'C')
 
 def generar_pdf_bytes(df_fallos, uptime, total_incidentes):
     pdf = ReporteForensePDF()
@@ -28,7 +37,7 @@ def generar_pdf_bytes(df_fallos, uptime, total_incidentes):
     pdf.set_font('Arial', 'B', 12)
     pdf.cell(0, 10, '1. RESUMEN EJECUTIVO', 0, 1)
     pdf.set_font('Arial', '', 11)
-    pdf.multi_cell(0, 8, f"Durante el periodo analizado, la infraestructura presentó un Uptime global del {uptime:.2f}%. Se detectaron un total de {total_incidentes} incidentes críticos (Errores 400+, Timeouts o caídas de DNS).")
+    pdf.multi_cell(0, 8, f"Durante el periodo analizado, la infraestructura presento un Uptime global del {uptime:.2f}%. Se detectaron un total de {total_incidentes} incidentes criticos (Errores 400+, Timeouts o caidas de DNS).")
     pdf.ln(5)
     
     # Tabla de Incidentes
@@ -57,27 +66,6 @@ def generar_pdf_bytes(df_fallos, uptime, total_incidentes):
         pdf.ln()
         
     return pdf.output(dest='S').encode('latin1')
-
-# Añadir el botón de descarga en la barra lateral
-if not df_fallos.empty:
-    st.sidebar.markdown("---")
-    st.sidebar.subheader("Exportar Evidencia")
-    pdf_bytes = generar_pdf_bytes(df_fallos, uptime_porcentaje, total_fallos)
-    
-    st.sidebar.download_button(
-        label="📥 Descargar Reporte PDF",
-        data=pdf_bytes,
-        file_name=f"Auditoria_UCV_{datetime.now().strftime('%Y%m%d')}.pdf",
-        mime="application/pdf"
-    )
-
-# 1. CONFIGURACIÓN DE PÁGINA
-st.set_page_config(
-    page_title="Forensic Web Monitor | UCV", 
-    page_icon="🛡️", 
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
 
 def aplicar_estilo_premium():
     st.markdown("""
@@ -109,9 +97,9 @@ def aplicar_estilo_premium():
         </style>
         """, unsafe_allow_html=True)
 
+# 3. APLICAR ESTILOS Y CONECTAR A BD
 aplicar_estilo_premium()
 
-# 2. CONEXIÓN A LA BÓVEDA FORENSE
 @st.cache_resource
 def init_connection():
     url = st.secrets["SUPABASE_URL"]
@@ -120,18 +108,17 @@ def init_connection():
 
 supabase = init_connection()
 
-# 3. EXTRACCIÓN DE DATOS (Cacheado cada 5 minutos)
 @st.cache_data(ttl=300)
 def load_data():
     response = supabase.table("incidentes").select("*").order("timestamp", desc=True).limit(2000).execute()
     df = pd.DataFrame(response.data)
     if not df.empty:
-        # Convertir timestamps a formato manejable
         df['timestamp'] = pd.to_datetime(df['timestamp'])
         df['latency_ms'] = pd.to_numeric(df['latency_ms'], errors='coerce').fillna(0)
         df['http_code'] = pd.to_numeric(df['http_code'], errors='coerce')
     return df
 
+# 4. INTERFAZ PRINCIPAL
 st.title("🛡️ Panel de Auditoría de Infraestructura Web")
 st.markdown("Monitor forense de disponibilidad, latencia y cambios de estado.")
 
@@ -151,7 +138,7 @@ else:
     else:
         df_filtrado = df
 
-    # --- MÉTRICAS GLOBALES (KPIs) ---
+    # --- CÁLCULOS LOGICOS ---
     total_checks = len(df_filtrado)
     df_fallos = df_filtrado[(df_filtrado['http_code'] >= 400) | (df_filtrado['http_code'].isna()) | (df_filtrado['error_type'] != 'OK')]
     total_fallos = len(df_fallos)
@@ -159,6 +146,7 @@ else:
     uptime_porcentaje = 100.0 if total_checks == 0 else ((total_checks - total_fallos) / total_checks) * 100
     latencia_promedio = df_filtrado['latency_ms'].mean()
 
+    # --- MÉTRICAS GLOBALES (KPIs) ---
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Uptime General", f"{uptime_porcentaje:.2f}%")
     col2.metric("Total de Muestras", total_checks)
@@ -170,7 +158,6 @@ else:
     # --- PESTAÑAS DE ANÁLISIS ---
     tab1, tab2, tab3 = st.tabs(["📈 Análisis de Latencia", "🚨 Registro de Incidentes", "🔐 Evidencia Forense (Hashes & SSL)"])
 
-    # Pestaña 1: Gráficas
     with tab1:
         st.subheader("Evolución de Tiempos de Respuesta (ms)")
         fig_latencia = px.line(
@@ -180,7 +167,6 @@ else:
             color="url",
             template="plotly_dark"
         )
-        # Rediseño premium de la gráfica
         fig_latencia.update_layout(
             plot_bgcolor="rgba(0,0,0,0)",
             paper_bgcolor="rgba(0,0,0,0)",
@@ -191,7 +177,6 @@ else:
         )
         st.plotly_chart(fig_latencia, use_container_width=True)
 
-    # Pestaña 2: Tabla de Fallos Críticos
     with tab2:
         st.subheader("Bitácora de Fallos y Tiempos de Inactividad")
         if not df_fallos.empty:
@@ -201,14 +186,24 @@ else:
         else:
             st.success("No se han registrado fallos para los filtros seleccionados.")
 
-    # Pestaña 3: Cadena de Custodia (Evidencia)
     with tab3:
         st.subheader("Auditoría de Integridad y Certificados")
         st.markdown("Registros criptográficos para demostrar la inmutabilidad de la evidencia.")
         df_evidencia = df_filtrado[['timestamp', 'url', 'content_hash', 'ssl_issuer', 'ssl_expiry', 'screenshot_url']].copy()
         st.dataframe(df_evidencia, use_container_width=True, hide_index=True)
 
-    # Botón de refresco manual
+    # --- EXPORTADOR PDF REUBICADO AQUÍ (Donde las variables ya existen) ---
     st.sidebar.markdown("---")
+    if not df_fallos.empty:
+        st.sidebar.subheader("Exportar Evidencia")
+        pdf_bytes = generar_pdf_bytes(df_fallos, uptime_porcentaje, total_fallos)
+        
+        st.sidebar.download_button(
+            label="📥 Descargar Reporte PDF",
+            data=pdf_bytes,
+            file_name=f"Auditoria_UCV_{datetime.now().strftime('%Y%m%d')}.pdf",
+            mime="application/pdf"
+        )
+
     if st.sidebar.button("🔄 Forzar Actualización de Datos"):
         load_data.clear()
