@@ -22,7 +22,6 @@ from reportlab.platypus import (
     TableStyle,
     Image as RLImage,
     PageBreak,
-    KeepTogether,
 )
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
@@ -30,9 +29,11 @@ from reportlab.pdfbase.ttfonts import TTFont
 import qrcode
 
 
-AURORA_VERSION = "1.1.0"
+AURORA_VERSION = "1.2.0"
 AUTHOR_WEB = "jaimesilva.co"
-VERIFY_BASE_URL = "https://aurora.jaimesilva.co/verify"
+
+# IMPORTANTE: cambia esto por la URL real pública de tu app Streamlit.
+VERIFY_BASE_URL = "https://ucv-monitor.streamlit.app"
 
 AURORA_DARK = "#0B1220"
 AURORA_PRIMARY = "#4F46E5"
@@ -41,8 +42,6 @@ AURORA_GREEN = "#10B981"
 AURORA_RED = "#EF4444"
 AURORA_AMBER = "#F59E0B"
 AURORA_MUTED = "#64748B"
-AURORA_BORDER = "#E2E8F0"
-AURORA_SOFT = "#F8FAFC"
 
 ASSETS_DIR = Path("assets")
 ASSETS_DIR.mkdir(exist_ok=True)
@@ -132,7 +131,7 @@ st.set_page_config(
     page_icon=str(AURORA_ICON_PATH),
     layout="wide",
     initial_sidebar_state="collapsed",
-    menu_items={}
+    menu_items={},
 )
 
 st.markdown("""
@@ -367,6 +366,15 @@ svg.main-svg {
     word-break:break-all;
 }
 
+.verify-card {
+    padding: 22px;
+    border-radius: 24px;
+    background: rgba(255,255,255,.58);
+    border: 1px solid rgba(255,255,255,.68);
+    box-shadow: 0 20px 60px rgba(15,23,42,.06);
+    backdrop-filter: blur(22px);
+}
+
 @media (max-width: 1100px) {
     .block-container {
         padding: 1rem 1.3rem 5rem 1.3rem !important;
@@ -391,11 +399,17 @@ svg.main-svg {
 """, unsafe_allow_html=True)
 
 
+@st.cache_resource
+def init_connection():
+    return create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
+
+
 def dataframe_sha256(df_in: pd.DataFrame) -> str:
     df_hash = df_in.copy()
     for col in ["timestamp", "url"]:
         if col not in df_hash.columns:
             df_hash[col] = ""
+
     payload = (
         df_hash.sort_values(by=["timestamp", "url"], ascending=[True, True])
         .astype(str)
@@ -410,7 +424,7 @@ def bytes_sha256(data: bytes) -> str:
 
 
 def short_hash(value: str, groups: int = 6) -> str:
-    clean = value.upper()
+    clean = str(value).upper()
     return "-".join(clean[i:i + 4] for i in range(0, min(len(clean), groups * 4), 4))
 
 
@@ -436,6 +450,13 @@ def classify_latency(ms: float) -> str:
     if ms < 3000:
         return "Degradada"
     return "Crítica"
+
+
+def short_url(url: str, max_len: int = 62) -> str:
+    if not isinstance(url, str):
+        return ""
+    cleaned = url.replace("https://", "").replace("http://", "")
+    return cleaned if len(cleaned) <= max_len else cleaned[:max_len] + "..."
 
 
 def make_qr_png(data: str) -> str:
@@ -466,16 +487,6 @@ def build_pdf_styles():
         fontSize=22,
         leading=26,
         textColor=colors.HexColor(AURORA_DARK),
-        spaceAfter=8,
-    ))
-
-    styles.add(ParagraphStyle(
-        name="AuroraH1",
-        fontName=PDF_FONT_BOLD,
-        fontSize=16,
-        leading=20,
-        textColor=colors.HexColor(AURORA_DARK),
-        spaceBefore=8,
         spaceAfter=8,
     ))
 
@@ -634,18 +645,22 @@ def section_band(title, styles):
     return table
 
 
-def generar_pdf_bytes(df_operacion):
+def preparar_df_operacion(df_operacion: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, dict]:
     df_pdf = df_operacion.copy()
 
-    for col in ["timestamp", "url", "http_code", "latency_ms", "error_type", "screenshot_url", "content_hash", "ssl_issuer", "ssl_expiry"]:
+    for col in [
+        "timestamp",
+        "url",
+        "http_code",
+        "latency_ms",
+        "error_type",
+        "screenshot_url",
+        "content_hash",
+        "ssl_issuer",
+        "ssl_expiry",
+    ]:
         if col not in df_pdf.columns:
             df_pdf[col] = None
-
-    report_id = f"AUR-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:8].upper()}"
-    generated_utc = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-    source_hash = dataframe_sha256(df_pdf)
-    verify_url = f"{VERIFY_BASE_URL}/{report_id}"
-    qr_path = make_qr_png(verify_url)
 
     df_pdf["is_fail"] = (
         (df_pdf["http_code"] >= 400)
@@ -657,11 +672,9 @@ def generar_pdf_bytes(df_operacion):
     df_fallos = df_pdf[df_pdf["is_fail"]].copy()
     total_fallos = len(df_fallos)
     uptime = 100.0 if total_checks == 0 else ((total_checks - total_fallos) / total_checks) * 100
-    latencia_promedio = df_pdf["latency_ms"].mean() if total_checks else 0
-    ventana_inicio = df_pdf["timestamp"].min()
-    ventana_fin = df_pdf["timestamp"].max()
+    avg_latency = float(df_pdf["latency_ms"].mean()) if total_checks else 0.0
 
-    df_servicios_pdf = (
+    df_servicios = (
         df_pdf.groupby("url")
         .agg(
             muestras=("url", "count"),
@@ -673,21 +686,49 @@ def generar_pdf_bytes(df_operacion):
         .reset_index()
     )
 
-    df_servicios_pdf["uptime"] = (
-        (df_servicios_pdf["muestras"] - df_servicios_pdf["fallos"])
-        / df_servicios_pdf["muestras"]
-    ) * 100
-
-    df_servicios_pdf["health_score"] = (
-        df_servicios_pdf["uptime"] * 0.7
-        + (100 - (df_servicios_pdf["latencia_promedio"].clip(0, 5000) / 5000 * 100)) * 0.3
+    df_servicios["uptime"] = ((df_servicios["muestras"] - df_servicios["fallos"]) / df_servicios["muestras"]) * 100
+    df_servicios["health_score"] = (
+        df_servicios["uptime"] * 0.7
+        + (100 - (df_servicios["latencia_promedio"].clip(0, 5000) / 5000 * 100)) * 0.3
     ).clip(0, 100)
 
-    df_servicios_pdf["estado"] = df_servicios_pdf.apply(
+    df_servicios["estado"] = df_servicios.apply(
         lambda r: estado_servicio(r["uptime"], r["fallos"], r["latencia_promedio"]),
         axis=1,
     )
 
+    metrics = {
+        "total_checks": int(total_checks),
+        "total_failures": int(total_fallos),
+        "uptime": float(uptime),
+        "avg_latency_ms": float(avg_latency),
+        "window_start": df_pdf["timestamp"].min(),
+        "window_end": df_pdf["timestamp"].max(),
+    }
+
+    return df_pdf, df_servicios, metrics
+
+
+def generar_pdf_bytes(
+    df_operacion,
+    report_id: str,
+    generated_utc: datetime,
+    source_hash: str,
+    verify_url: str,
+):
+    df_pdf, df_servicios_pdf, metrics = preparar_df_operacion(df_operacion)
+
+    generated_utc_label = generated_utc.strftime("%Y-%m-%d %H:%M:%S UTC")
+    qr_path = make_qr_png(verify_url)
+
+    uptime = metrics["uptime"]
+    total_checks = metrics["total_checks"]
+    total_fallos = metrics["total_failures"]
+    latencia_promedio = metrics["avg_latency_ms"]
+    ventana_inicio = metrics["window_start"]
+    ventana_fin = metrics["window_end"]
+
+    df_fallos = df_pdf[df_pdf["is_fail"]].copy()
     op_status, op_color = estado_global_operacion(uptime, total_fallos, latencia_promedio)
 
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
@@ -727,7 +768,7 @@ def generar_pdf_bytes(df_operacion):
                     textColor=colors.HexColor(op_color),
                 )),
                 p(f"Report ID<br/>{report_id}", styles["AuroraSmall"]),
-            ]
+            ],
         ]],
         colWidths=[24 * mm, 100 * mm, 58 * mm],
     )
@@ -777,7 +818,7 @@ def generar_pdf_bytes(df_operacion):
         [[
             [
                 p("Integrity & Chain-of-Custody Snapshot", styles["AuroraH2"]),
-                p(f"<b>Generated UTC:</b> {generated_utc}", styles["AuroraBody"]),
+                p(f"<b>Generated UTC:</b> {generated_utc_label}", styles["AuroraBody"]),
                 p(f"<b>Source dataset SHA-256:</b> {source_hash}", styles["AuroraBody"]),
                 p(f"<b>Method:</b> Automated extraction from Aurora technical vault. Full monitored operation, independent of dashboard filters.", styles["AuroraBody"]),
                 p("<b>Standards alignment:</b> ISO/IEC 27037 principles for digital evidence handling and NIST SP 800-92 log management guidance.", styles["AuroraBody"]),
@@ -786,7 +827,7 @@ def generar_pdf_bytes(df_operacion):
                 RLImage(qr_path, width=28 * mm, height=28 * mm),
                 p("Verification endpoint", styles["CenterSmall"]),
                 p(verify_url, styles["CenterSmall"]),
-            ]
+            ],
         ]],
         colWidths=[138 * mm, 44 * mm],
     )
@@ -918,7 +959,7 @@ def generar_pdf_bytes(df_operacion):
                 Spacer(1, 4 * mm),
                 RLImage(qr_path, width=31 * mm, height=31 * mm),
                 p("Scan to verify report reference", styles["CenterSmall"]),
-            ]
+            ],
         ]],
         colWidths=[132 * mm, 50 * mm],
     )
@@ -933,22 +974,18 @@ def generar_pdf_bytes(df_operacion):
     ]))
     story.append(seal)
 
-    story.append(Spacer(1, 8 * mm))
-    story.append(p("Footer placement note: operational identity, integrity and page continuity are kept in the footer on every page. Core evidentiary identifiers remain in the body because they must survive printing, screenshots and partial extraction.", styles["AuroraSmall"]))
-
     doc.build(
         story,
-        onFirstPage=lambda canvas, doc: draw_pdf_header_footer(canvas, doc, report_id, generated_utc),
-        onLaterPages=lambda canvas, doc: draw_pdf_header_footer(canvas, doc, report_id, generated_utc),
+        onFirstPage=lambda canvas, doc: draw_pdf_header_footer(canvas, doc, report_id, generated_utc_label),
+        onLaterPages=lambda canvas, doc: draw_pdf_header_footer(canvas, doc, report_id, generated_utc_label),
     )
 
     with open(tmp.name, "rb") as f:
         return f.read()
 
 
-@st.cache_resource
-def init_connection():
-    return create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
+def registrar_reporte(metadata: dict):
+    init_connection().table("aurora_reports").upsert(metadata).execute()
 
 
 @st.cache_data(ttl=300)
@@ -992,37 +1029,92 @@ def load_data():
         return pd.DataFrame()
 
 
-def short_url(url: str, max_len: int = 62) -> str:
-    if not isinstance(url, str):
-        return ""
-    cleaned = url.replace("https://", "").replace("http://", "")
-    return cleaned if len(cleaned) <= max_len else cleaned[:max_len] + "..."
-
-
-st.markdown("""
-<div class="topbar">
-  <div class="brand-wrap">
-    <div class="brand-logo">
-      <svg width="42" height="42" viewBox="0 0 64 64" fill="none">
-        <defs>
-          <linearGradient id="g" x1="8" y1="8" x2="56" y2="56">
-            <stop offset="0%" stop-color="#4F46E5"/>
-            <stop offset="55%" stop-color="#06B6D4"/>
-            <stop offset="100%" stop-color="#10B981"/>
-          </linearGradient>
-        </defs>
-        <rect x="6" y="6" width="52" height="52" rx="16" fill="url(#g)"/>
-        <path d="M18 39C23 22 41 22 46 39" stroke="white" stroke-width="5" stroke-linecap="round"/>
-        <circle cx="32" cy="32" r="5" fill="white"/>
-      </svg>
+def render_brand():
+    st.markdown("""
+    <div class="topbar">
+      <div class="brand-wrap">
+        <div class="brand-logo">
+          <svg width="42" height="42" viewBox="0 0 64 64" fill="none">
+            <defs>
+              <linearGradient id="g" x1="8" y1="8" x2="56" y2="56">
+                <stop offset="0%" stop-color="#4F46E5"/>
+                <stop offset="55%" stop-color="#06B6D4"/>
+                <stop offset="100%" stop-color="#10B981"/>
+              </linearGradient>
+            </defs>
+            <rect x="6" y="6" width="52" height="52" rx="16" fill="url(#g)"/>
+            <path d="M18 39C23 22 41 22 46 39" stroke="white" stroke-width="5" stroke-linecap="round"/>
+            <circle cx="32" cy="32" r="5" fill="white"/>
+          </svg>
+        </div>
+        <div class="brand-text">Aurora</div>
+        <div class="brand-badge">LIVE MONITORING</div>
+        <div class="standards-badge">ISO/IEC 27037 · NIST SP 800-92 aligned</div>
+      </div>
     </div>
-    <div class="brand-text">Aurora</div>
-    <div class="brand-badge">LIVE MONITORING</div>
-    <div class="standards-badge">ISO/IEC 27037 · NIST SP 800-92 aligned</div>
-  </div>
-</div>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
+
+def render_verify_mode(report_id: str):
+    render_brand()
+
+    st.markdown('<div class="verify-card">', unsafe_allow_html=True)
+    st.markdown("## Aurora · Verificación de informe")
+    st.caption("Validación pública de integridad documental")
+
+    try:
+        response = (
+            init_connection()
+            .table("aurora_reports")
+            .select("*")
+            .eq("report_id", report_id)
+            .limit(1)
+            .execute()
+        )
+    except Exception as e:
+        st.error("No fue posible consultar el registro de verificación.")
+        st.exception(e)
+        st.stop()
+
+    if not response.data:
+        st.error("Informe no encontrado en el registro Aurora.")
+        st.stop()
+
+    report = response.data[0]
+
+    st.success("Informe registrado y verificable.")
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Report ID", report["report_id"])
+    col2.metric("Uptime", f"{float(report['uptime']):.2f}%")
+    col3.metric("Incidentes", int(report["total_failures"]))
+
+    st.code(f"Dataset SHA-256: {report['source_sha256']}")
+    st.code(f"PDF SHA-256: {report.get('pdf_sha256') or 'Pendiente'}")
+
+    st.markdown("### Validar PDF")
+    uploaded = st.file_uploader("Subir PDF para comparar contra el hash registrado", type=["pdf"])
+
+    if uploaded:
+        uploaded_hash = hashlib.sha256(uploaded.read()).hexdigest()
+
+        if uploaded_hash == report.get("pdf_sha256"):
+            st.success("El PDF coincide exactamente con el hash registrado.")
+        else:
+            st.error("El PDF no coincide con el hash registrado.")
+
+        st.code(f"Hash del archivo cargado: {uploaded_hash}")
+
+    st.markdown("</div>", unsafe_allow_html=True)
+    st.stop()
+
+
+query_params = st.query_params
+if "verify" in query_params:
+    render_verify_mode(query_params["verify"])
+
+
+render_brand()
 
 df = load_data()
 
@@ -1030,8 +1122,37 @@ if df.empty:
     st.warning("Aún no hay suficientes datos en la bóveda forense.")
     st.stop()
 
-pdf_bytes = generar_pdf_bytes(df)
+report_id = f"AUR-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:8].upper()}"
+generated_utc = datetime.now(timezone.utc)
+source_hash = dataframe_sha256(df)
+verify_url = f"{VERIFY_BASE_URL}?verify={report_id}"
+
+pdf_bytes = generar_pdf_bytes(
+    df,
+    report_id=report_id,
+    generated_utc=generated_utc,
+    source_hash=source_hash,
+    verify_url=verify_url,
+)
 pdf_hash = bytes_sha256(pdf_bytes)
+
+df_full, df_services_full, metrics_full = preparar_df_operacion(df)
+
+registrar_reporte({
+    "report_id": report_id,
+    "generated_utc": generated_utc.isoformat(),
+    "aurora_version": AURORA_VERSION,
+    "author_web": AUTHOR_WEB,
+    "source_sha256": source_hash,
+    "pdf_sha256": pdf_hash,
+    "verify_url": verify_url,
+    "total_checks": int(metrics_full["total_checks"]),
+    "total_failures": int(metrics_full["total_failures"]),
+    "uptime": float(metrics_full["uptime"]),
+    "avg_latency_ms": float(metrics_full["avg_latency_ms"]),
+    "window_start": metrics_full["window_start"].isoformat() if pd.notna(metrics_full["window_start"]) else None,
+    "window_end": metrics_full["window_end"].isoformat() if pd.notna(metrics_full["window_end"]) else None,
+})
 
 export_left, export_right = st.columns([5.8, 1])
 
@@ -1047,7 +1168,7 @@ with export_right:
         use_container_width=True,
     )
     st.markdown(f'<div class="hash-caption">SHA-256 PDF: {pdf_hash[:16]}...</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
 endpoints_disponibles = sorted(df["url"].dropna().unique().tolist())
 
@@ -1103,37 +1224,15 @@ if df_filtrado.empty:
     st.warning("No hay datos para el endpoint o ventana seleccionada.")
     st.stop()
 
-df_filtrado["is_fail"] = (
-    (df_filtrado["http_code"] >= 400)
-    | (df_filtrado["http_code"].isna())
-    | (df_filtrado["error_type"].fillna("OK") != "OK")
-)
+df_filtrado, df_servicios, metrics = preparar_df_operacion(df_filtrado)
 
-total_checks = len(df_filtrado)
 df_fallos = df_filtrado[df_filtrado["is_fail"]].copy()
-total_fallos = len(df_fallos)
-uptime_porcentaje = 100.0 if total_checks == 0 else ((total_checks - total_fallos) / total_checks) * 100
-latencia_promedio = df_filtrado["latency_ms"].mean() if total_checks else 0
-ventana_inicio = df_filtrado["timestamp"].min()
-ventana_fin = df_filtrado["timestamp"].max()
-
-df_servicios = (
-    df_filtrado.groupby("url")
-    .agg(
-        muestras=("url", "count"),
-        fallos=("is_fail", "sum"),
-        latencia_promedio=("latency_ms", "mean"),
-        latencia_maxima=("latency_ms", "max"),
-        evidencia=("screenshot_url", lambda x: x.notna().sum()),
-    )
-    .reset_index()
-)
-
-df_servicios["uptime"] = ((df_servicios["muestras"] - df_servicios["fallos"]) / df_servicios["muestras"]) * 100
-df_servicios["health_score"] = (
-    df_servicios["uptime"] * 0.7
-    + (100 - (df_servicios["latencia_promedio"].clip(0, 5000) / 5000 * 100)) * 0.3
-).clip(0, 100)
+total_checks = metrics["total_checks"]
+total_fallos = metrics["total_failures"]
+uptime_porcentaje = metrics["uptime"]
+latencia_promedio = metrics["avg_latency_ms"]
+ventana_inicio = metrics["window_start"]
+ventana_fin = metrics["window_end"]
 
 servicio_mas_caido = df_servicios.sort_values("uptime").iloc[0]
 servicio_mas_lento = df_servicios.sort_values("latencia_promedio", ascending=False).iloc[0]
@@ -1264,7 +1363,7 @@ elif section == "Incidentes":
             "url": "Servicio",
             "http_code": "Código",
             "latency_ms": "Latencia",
-            "error_type": "Evento"
+            "error_type": "Evento",
         })
         st.dataframe(df_fallos_view, use_container_width=True, hide_index=True, height=560)
 
@@ -1284,6 +1383,6 @@ elif section == "Evidencia Forense":
         "content_hash": "Hash SHA256",
         "ssl_issuer": "Emisor SSL",
         "ssl_expiry": "Expira SSL",
-        "screenshot_url": "Evidencia"
+        "screenshot_url": "Evidencia",
     })
     st.dataframe(df_evidencia_view, use_container_width=True, hide_index=True, height=560)
