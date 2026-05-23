@@ -20,7 +20,8 @@ ENDPOINTS = [
     "https://ucv.blackboard.com",
     "https://ucv.edu.pe",
     "https://defensoria.azurewebsites.net/",
-    "https://matriculaucvv2.azurewebsites.net/matricula/open"
+    "https://matriculaucvv2.azurewebsites.net/matricula/open",
+    "https://matriculaucvv2.azurewebsites.net"
 ]
 
 def check_ssl(hostname):
