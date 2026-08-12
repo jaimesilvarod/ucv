@@ -2,18 +2,24 @@ name: Forensics Monitor
 
 on:
   schedule:
-    - cron: '*/5 * * * *' # Ejecuta cada 5 minutos
-  workflow_dispatch: # Permite ejecutarlo manual si lo necesitas ya
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: forensics-monitor
+  cancel-in-progress: true
 
 jobs:
   audit:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+
     steps:
       - name: Checkout del código
         uses: actions/checkout@v4
 
       - name: Configurar Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
@@ -28,9 +34,11 @@ jobs:
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: python auditor.py
 
-      - name: Guardar Evidencia Gráfica
+      - name: Guardar Evidencia
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: screenshots-${{ github.run_id }}
+          name: evidence-${{ github.run_id }}
           path: evidence/
           retention-days: 30
+          if-no-files-found: ignore
