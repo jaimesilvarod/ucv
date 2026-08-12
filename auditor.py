@@ -103,11 +103,38 @@ async def check_site(url):
                 await browser.close()
                 
     # Guardar todo en la bóveda
-    supabase.table("incidentes").insert(result).execute()
+    async def save_to_supabase(result):
+    try:
+        await asyncio.wait_for(
+            asyncio.to_thread(
+                lambda: await save_to_supabase(result)
+            ),
+            timeout=10
+        )
+        return True
+    except asyncio.TimeoutError:
+        print(f"[SUPABASE TIMEOUT] {result['url']}")
+        return False
+    except Exception as e:
+        print(f"[SUPABASE ERROR] {result['url']} - {e}")
+        return False
+        
     print(f"[{result['http_code']}] {url} - {result['latency_ms']}ms - {result['error_type']}")
 
 async def main():
-    await asyncio.gather(*(check_site(url) for url in ENDPOINTS))
+    async def guarded_check(url):
+        try:
+            await asyncio.wait_for(check_site(url), timeout=60)
+        except asyncio.TimeoutError:
+            print(f"[GLOBAL TIMEOUT] {url} excedió 60 segundos")
+        except Exception as e:
+            print(f"[GLOBAL ERROR] {url} - {e}")
+
+    await asyncio.gather(
+        *(guarded_check(url) for url in ENDPOINTS),
+        return_exceptions=True
+    )
+
 
 if __name__ == "__main__":
     asyncio.run(main())
