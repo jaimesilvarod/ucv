@@ -104,20 +104,20 @@ async def check_site(url):
                 
     # Guardar todo en la bóveda
     async def save_to_supabase(result):
-    try:
-        await asyncio.wait_for(
-            asyncio.to_thread(
-                lambda: await save_to_supabase(result)
-            ),
-            timeout=10
-        )
-        return True
-    except asyncio.TimeoutError:
-        print(f"[SUPABASE TIMEOUT] {result['url']}")
-        return False
-    except Exception as e:
-        print(f"[SUPABASE ERROR] {result['url']} - {e}")
-        return False
+        try:
+            await asyncio.wait_for(
+                asyncio.to_thread(
+                    lambda: await save_to_supabase(result)
+                ),
+                timeout=10
+            )
+            return True
+        except asyncio.TimeoutError:
+            print(f"[SUPABASE TIMEOUT] {result['url']}")
+            return False
+        except Exception as e:
+            print(f"[SUPABASE ERROR] {result['url']} - {e}")
+            return False
         
     print(f"[{result['http_code']}] {url} - {result['latency_ms']}ms - {result['error_type']}")
 
