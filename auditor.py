@@ -5,13 +5,18 @@ import time
 import hashlib
 import socket
 import ssl
-import json
 from datetime import datetime, timezone
 from playwright.async_api import async_playwright
 from supabase import create_client
 
-supabase = create_client(os.environ.get("SUPABASE_URL"), os.environ.get("SUPABASE_KEY"))
+
+supabase = create_client(
+    os.environ.get("SUPABASE_URL"),
+    os.environ.get("SUPABASE_KEY")
+)
+
 os.makedirs("evidence", exist_ok=True)
+
 
 ENDPOINTS = [
     "https://trilce.ucv.edu.pe",
@@ -24,22 +29,48 @@ ENDPOINTS = [
     "https://matriculaucvv2.azurewebsites.net"
 ]
 
+
 def check_ssl(hostname):
     """Extrae la información del certificado SSL."""
     context = ssl.create_default_context()
+
     try:
         with socket.create_connection((hostname, 443), timeout=5) as sock:
             with context.wrap_socket(sock, server_hostname=hostname) as ssock:
                 cert = ssock.getpeercert()
-                return cert.get('notAfter'), str(cert.get('issuer'))
+                return cert.get("notAfter"), str(cert.get("issuer"))
     except Exception:
         return None, None
+
+
+async def save_to_supabase(result):
+    """Guarda el resultado sin permitir que Supabase bloquee el monitor."""
+    try:
+        await asyncio.wait_for(
+            asyncio.to_thread(
+                lambda: supabase
+                .table("incidentes")
+                .insert(result)
+                .execute()
+            ),
+            timeout=10
+        )
+
+        return True
+
+    except asyncio.TimeoutError:
+        print(f"[SUPABASE TIMEOUT] {result['url']}")
+        return False
+
+    except Exception as e:
+        print(f"[SUPABASE ERROR] {result['url']} - {e}")
+        return False
+
 
 async def check_site(url):
     start_time = time.perf_counter()
     hostname = httpx.URL(url).host
-    
-    # Recolección de datos base
+
     result = {
         "url": url,
         "http_code": None,
@@ -51,84 +82,139 @@ async def check_site(url):
         "headers_dump": {},
         "screenshot_url": None
     }
-    
-    # Check SSL
+
     result["ssl_expiry"], result["ssl_issuer"] = check_ssl(hostname)
-    
+
     incident = False
     html_content = ""
-    
+
     try:
-        async with httpx.AsyncClient(timeout=15.0, verify=False) as client:
-            resp = await client.get(url, follow_redirects=True)
+        async with httpx.AsyncClient(
+            timeout=15.0,
+            verify=False
+        ) as client:
+
+            resp = await client.get(
+                url,
+                follow_redirects=True
+            )
+
             result["http_code"] = resp.status_code
-            result["latency_ms"] = int((time.perf_counter() - start_time) * 1000)
+            result["latency_ms"] = int(
+                (time.perf_counter() - start_time) * 1000
+            )
+
             result["headers_dump"] = dict(resp.headers)
-            
-            # Hash criptográfico del contenido
+
             content_bytes = resp.content
-            result["content_hash"] = hashlib.sha256(content_bytes).hexdigest()
+            result["content_hash"] = hashlib.sha256(
+                content_bytes
+            ).hexdigest()
+
             html_content = resp.text
-            
-            if result["http_code"] >= 400 or result["latency_ms"] > 3000:
+
+            if (
+                result["http_code"] >= 400
+                or result["latency_ms"] > 3000
+            ):
                 incident = True
-                result["error_type"] = f"HTTP {result['http_code']} o Latencia Alta"
-                
+                result["error_type"] = (
+                    f"HTTP {result['http_code']} o Latencia Alta"
+                )
+
     except Exception as e:
         incident = True
         result["error_type"] = str(e)
-        
+        result["latency_ms"] = int(
+            (time.perf_counter() - start_time) * 1000
+        )
+
     if incident:
-        ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-        safe_name = url.replace('https://', '').split('/')[0]
+        ts = datetime.now(timezone.utc).strftime(
+            "%Y%m%d_%H%M%S"
+        )
+
+        safe_name = (
+            url
+            .replace("https://", "")
+            .split("/")[0]
+        )
+
         shot_path = f"evidence/{ts}_{safe_name}.png"
         html_path = f"evidence/{ts}_{safe_name}.html"
-        
-        # Volcado del HTML para diffs posteriores
+
         if html_content:
-            with open(html_path, "w", encoding="utf-8") as f:
+            with open(
+                html_path,
+                "w",
+                encoding="utf-8"
+            ) as f:
                 f.write(html_content)
-        
-        # Fotografía forense con Playwright
-        async with async_playwright() as p:
-            browser = await p.chromium.launch(headless=True)
-            page = await browser.new_page()
-            try:
-                await page.goto(url, timeout=15000)
-                await page.screenshot(path=shot_path, full_page=True)
-                result["screenshot_url"] = shot_path
-            except Exception:
-                pass 
-            finally:
-                await browser.close()
-                
-    # Guardar todo en la bóveda
-    async def save_to_supabase(result):
+
         try:
-            await asyncio.wait_for(
-                asyncio.to_thread(
-                    lambda: await save_to_supabase(result)
-                ),
-                timeout=10
-            )
-            return True
-        except asyncio.TimeoutError:
-            print(f"[SUPABASE TIMEOUT] {result['url']}")
-            return False
+            async with async_playwright() as p:
+                browser = await p.chromium.launch(
+                    headless=True
+                )
+
+                page = await browser.new_page()
+
+                try:
+                    await page.goto(
+                        url,
+                        timeout=15000
+                    )
+
+                    await page.screenshot(
+                        path=shot_path,
+                        full_page=True
+                    )
+
+                    result["screenshot_url"] = shot_path
+
+                except Exception as e:
+                    print(
+                        f"[SCREENSHOT ERROR] {url} - {e}"
+                    )
+
+                finally:
+                    await browser.close()
+
         except Exception as e:
-            print(f"[SUPABASE ERROR] {result['url']} - {e}")
-            return False
-        
-    print(f"[{result['http_code']}] {url} - {result['latency_ms']}ms - {result['error_type']}")
+            print(
+                f"[PLAYWRIGHT ERROR] {url} - {e}"
+            )
+
+    await save_to_supabase(result)
+
+    print(
+        f"[{result['http_code']}] "
+        f"{url} - "
+        f"{result['latency_ms']}ms - "
+        f"{result['error_type']}"
+    )
+
 
 async def main():
+
     async def guarded_check(url):
         try:
-            await asyncio.wait_for(check_site(url), timeout=60)
+            await asyncio.wait_for(
+                check_site(url),
+                timeout=60
+            )
+
         except asyncio.TimeoutError:
-            print(f"[GLOBAL TIMEOUT] {url} excedió 60 segundos")
+            print(
+                f"[GLOBAL TIMEOUT] "
+                f"{url} excedió 60 segundos"
+            )
+
         except Exception as e:
-            print(f"[GLOBAL ERROR] {url} - {e}")
+            print(
+                f"[GLOBAL ERROR] "
+                f"{url} - {e}"
+            )
 
     await asyncio.gather(
         *(guarded_check(url) for url in ENDPOINTS),
